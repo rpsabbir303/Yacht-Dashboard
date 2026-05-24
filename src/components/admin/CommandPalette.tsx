@@ -8,17 +8,17 @@ import { cn } from "@utils/cn";
 import type { SearchResult, SearchResultKind } from "@/types";
 
 const KIND_LABEL: Record<SearchResultKind, string> = {
-  user: "User",
+  crew: "Crew",
+  owner: "Owner",
   job: "Job",
-  report: "Report",
-  dispute: "Dispute",
+  application: "Application",
 };
 
 const KIND_TONE: Record<SearchResultKind, string> = {
-  user: "text-teal-300 bg-teal-500/10 ring-teal-500/20",
+  crew: "text-teal-300 bg-teal-500/10 ring-teal-500/20",
+  owner: "text-gold-400 bg-gold-500/10 ring-gold-500/20",
   job: "text-white bg-white/[0.04] ring-white/[0.08]",
-  report: "text-[#C24545] bg-[#AA2727]/10 ring-[#AA2727]/30",
-  dispute: "text-gold-400 bg-gold-500/10 ring-gold-500/20",
+  application: "text-grey-300 bg-white/[0.03] ring-white/[0.06]",
 };
 
 /**
@@ -96,7 +96,7 @@ export const CommandPalette = () => {
               <Input
                 autoFocus
                 size="large"
-                placeholder="Search users, jobs, reports, disputes…"
+                placeholder="Search crew, owners, jobs, applications…"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 bordered={false}
@@ -121,7 +121,7 @@ export const CommandPalette = () => {
                   <div className="text-sm text-grey-400">
                     {query.trim()
                       ? "No results found"
-                      : "Search across users, jobs, reports and disputes."}
+                      : "Search across crew, owners, jobs and applications."}
                   </div>
                   {!query.trim() && (
                     <div className="mt-3 flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.18em] text-grey-500">

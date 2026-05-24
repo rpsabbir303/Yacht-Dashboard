@@ -1,105 +1,162 @@
 import { Suspense, lazy } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 
-import { DashboardLayout } from "@layouts/DashboardLayout";
+import { AdminLayout } from "@layouts/AdminLayout";
+import { AuthLayout } from "@layouts/AuthLayout";
 import { PageLoader } from "@components/feedback/PageLoader";
+import { RequireFlowStep } from "@auth/components/RequireFlowStep";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { AdminRoute } from "./AdminRoute";
 
-const LoginPage = lazy(() => import("@pages/Login/LoginPage"));
-const DashboardPage = lazy(() => import("@modules/dashboard/DashboardPage"));
-const JobsListPage = lazy(() => import("@modules/jobs/JobsListPage"));
-const JobCreatePage = lazy(() => import("@modules/jobs/JobCreatePage"));
-const JobDetailsPage = lazy(() => import("@modules/jobs/JobDetailsPage"));
-const CrewListPage = lazy(() => import("@modules/crew/CrewListPage"));
-const CrewProfilePage = lazy(() => import("@modules/crew/CrewProfilePage"));
-const ApplicationsPage = lazy(
-  () => import("@modules/applications/ApplicationsPage"),
+/* ---- Auth flow ---- */
+const SignInPage = lazy(() => import("@auth/pages/SignInPage"));
+const ForgotPasswordPage = lazy(() => import("@auth/pages/ForgotPasswordPage"));
+const OtpVerificationPage = lazy(
+  () => import("@auth/pages/OtpVerificationPage"),
 );
-const MessagesPage = lazy(() => import("@modules/messaging/MessagesPage"));
-const SchedulePage = lazy(() => import("@modules/schedule/SchedulePage"));
-const NotificationsPage = lazy(
-  () => import("@modules/notifications/NotificationsPage"),
-);
-const SettingsPage = lazy(() => import("@modules/settings/SettingsPage"));
+const ResetPasswordPage = lazy(() => import("@auth/pages/ResetPasswordPage"));
+const ResetSuccessPage = lazy(() => import("@auth/pages/ResetSuccessPage"));
+
+/* ---- Misc public ---- */
 const NotFoundPage = lazy(() => import("@pages/NotFound/NotFoundPage"));
 
-/* ---------------- Admin (lazy) ---------------- */
-const AdminIndexRedirect = lazy(
-  () => import("@modules/admin/AdminIndexRedirect"),
+/* ---- Admin console ---- */
+const AdminDashboardPage = lazy(
+  () => import("@admin/dashboard/AdminDashboardPage"),
 );
-const VerificationsPage = lazy(
-  () => import("@modules/admin/verifications/VerificationsPage"),
+const CrewManagementPage = lazy(
+  () => import("@admin/crew/CrewManagementPage"),
 );
-const UsersListPage = lazy(
-  () => import("@modules/admin/users/UsersListPage"),
+const CrewProfilePage = lazy(() => import("@admin/crew/CrewProfilePage"));
+const OwnerVerificationPage = lazy(
+  () => import("@admin/owners/OwnerVerificationPage"),
 );
-const UserDetailsPage = lazy(
-  () => import("@modules/admin/users/UserDetailsPage"),
+const JobManagementPage = lazy(() => import("@admin/jobs/JobManagementPage"));
+const JobDetailsPage = lazy(() => import("@admin/jobs/JobDetailsPage"));
+const ApplicationsPage = lazy(
+  () => import("@admin/applications/ApplicationsPage"),
 );
-const ReportedJobsPage = lazy(
-  () => import("@modules/admin/moderation/ReportedJobsPage"),
+const AdminNotificationsPage = lazy(
+  () => import("@admin/notifications/NotificationsPage"),
 );
-const ModerationPage = lazy(
-  () => import("@modules/admin/moderation/ModerationPage"),
-);
-const DisputesPage = lazy(
-  () => import("@modules/admin/disputes/DisputesPage"),
-);
-const AnnouncementsPage = lazy(
-  () => import("@modules/admin/announcements/AnnouncementsPage"),
-);
-const AnalyticsPage = lazy(
-  () => import("@modules/admin/analytics/AnalyticsPage"),
-);
-const SecurityPage = lazy(
-  () => import("@modules/admin/security/SecurityPage"),
+const AnalyticsPage = lazy(() => import("@admin/analytics/AnalyticsPage"));
+const SecurityPage = lazy(() => import("@admin/security/SecurityPage"));
+const PlatformSettingsPage = lazy(
+  () => import("@admin/settings/PlatformSettingsPage"),
 );
 
+/**
+ * The dashboard is admin-only — every authenticated route lives under
+ * `/admin/*` inside `AdminLayout`. The `/auth/*` tree hosts the public sign-in
+ * and password-recovery flow inside the dedicated `AuthLayout`. Legacy
+ * `/login` is preserved as a redirect for back-compat.
+ */
 export const AppRoutes = () => (
   <Suspense fallback={<PageLoader />}>
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
+      {/* Root + legacy redirects */}
+      <Route path="/" element={<Navigate to="/admin" replace />} />
+      <Route path="/login" element={<Navigate to="/auth/sign-in" replace />} />
 
+      {/* -------- Auth flow (public) -------- */}
+      <Route element={<AuthLayout />}>
+        <Route path="/auth" element={<Navigate to="/auth/sign-in" replace />} />
+        <Route path="/auth/sign-in" element={<SignInPage />} />
+        <Route
+          path="/auth/forgot-password"
+          element={<ForgotPasswordPage />}
+        />
+        <Route
+          path="/auth/verify-otp"
+          element={
+            <RequireFlowStep step="otp">
+              <OtpVerificationPage />
+            </RequireFlowStep>
+          }
+        />
+        <Route
+          path="/auth/reset-password"
+          element={
+            <RequireFlowStep step="reset">
+              <ResetPasswordPage />
+            </RequireFlowStep>
+          }
+        />
+        <Route
+          path="/auth/success"
+          element={
+            <RequireFlowStep step="success">
+              <ResetSuccessPage />
+            </RequireFlowStep>
+          }
+        />
+      </Route>
+
+      {/* -------- Admin console (protected) -------- */}
       <Route
         element={
           <ProtectedRoute>
-            <DashboardLayout />
+            <AdminRoute>
+              <AdminLayout />
+            </AdminRoute>
           </ProtectedRoute>
         }
       >
-        <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/admin" element={<AdminDashboardPage />} />
 
-        <Route path="/jobs" element={<JobsListPage />} />
         <Route
-          path="/jobs/new"
+          path="/admin/crew"
           element={
-            <ProtectedRoute allow={["owner", "agent", "captain", "admin"]}>
-              <JobCreatePage />
-            </ProtectedRoute>
+            <AdminRoute required="crew.read">
+              <CrewManagementPage />
+            </AdminRoute>
           }
         />
-        <Route path="/jobs/:id" element={<JobDetailsPage />} />
-
-        <Route path="/crew" element={<CrewListPage />} />
-        <Route path="/crew/:id" element={<CrewProfilePage />} />
-
-        <Route path="/applications" element={<ApplicationsPage />} />
-
-        <Route path="/messages" element={<MessagesPage />} />
-        <Route path="/messages/:conversationId" element={<MessagesPage />} />
-
-        <Route path="/schedule" element={<SchedulePage />} />
-        <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/settings" element={<SettingsPage />} />
-
-        {/* ---------------- ADMIN ---------------- */}
         <Route
-          path="/admin"
+          path="/admin/crew/:id"
           element={
-            <AdminRoute>
-              <AdminIndexRedirect />
+            <AdminRoute required="crew.read">
+              <CrewProfilePage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/owners"
+          element={
+            <AdminRoute required="owners.read">
+              <OwnerVerificationPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/jobs"
+          element={
+            <AdminRoute required="jobs.read">
+              <JobManagementPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/jobs/:id"
+          element={
+            <AdminRoute required="jobs.read">
+              <JobDetailsPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/applications"
+          element={
+            <AdminRoute required="applications.read">
+              <ApplicationsPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/notifications"
+          element={
+            <AdminRoute required="announcements.send">
+              <AdminNotificationsPage />
             </AdminRoute>
           }
         />
@@ -112,62 +169,6 @@ export const AppRoutes = () => (
           }
         />
         <Route
-          path="/admin/verifications"
-          element={
-            <AdminRoute required="verifications.read">
-              <VerificationsPage />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/users"
-          element={
-            <AdminRoute required="users.read">
-              <UsersListPage />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/users/:id"
-          element={
-            <AdminRoute required="users.read">
-              <UserDetailsPage />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/reported-jobs"
-          element={
-            <AdminRoute required="moderation.read">
-              <ReportedJobsPage />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/moderation"
-          element={
-            <AdminRoute required="moderation.read">
-              <ModerationPage />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/disputes"
-          element={
-            <AdminRoute required="disputes.read">
-              <DisputesPage />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/announcements"
-          element={
-            <AdminRoute required="announcements.send">
-              <AnnouncementsPage />
-            </AdminRoute>
-          }
-        />
-        <Route
           path="/admin/security"
           element={
             <AdminRoute required="security.read">
@@ -175,6 +176,7 @@ export const AppRoutes = () => (
             </AdminRoute>
           }
         />
+        <Route path="/admin/settings" element={<PlatformSettingsPage />} />
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

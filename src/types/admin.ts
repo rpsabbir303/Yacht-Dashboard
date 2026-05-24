@@ -1,7 +1,6 @@
 import type { ID, ISODateString } from "./common";
 import type { UserRole } from "./auth";
-import type { CrewMember } from "./crew";
-import type { Job } from "./job";
+import type { CrewPosition } from "./job";
 
 /* ===========================================================
    Roles & permissions
@@ -9,48 +8,65 @@ import type { Job } from "./job";
 
 export type AdminRole = "super-admin" | "moderator" | "support-agent";
 
+/**
+ * Practical, yacht-hiring-focused permission union.
+ *
+ * Anything moderation-, report- or dispute-shaped has been removed in favour
+ * of the operational surfaces the admin actually needs: crew, owners, jobs,
+ * applications, analytics, security, announcements and platform settings.
+ */
 export type Permission =
-  | "users.read"
-  | "users.write"
-  | "users.suspend"
+  | "crew.read"
+  | "crew.write"
+  | "owners.read"
+  | "owners.write"
   | "verifications.read"
   | "verifications.approve"
-  | "moderation.read"
-  | "moderation.act"
-  | "disputes.read"
-  | "disputes.resolve"
+  | "jobs.read"
+  | "jobs.write"
+  | "applications.read"
+  | "applications.write"
   | "announcements.send"
   | "analytics.read"
-  | "security.read";
+  | "security.read"
+  | "settings.write";
 
 export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
   "super-admin": [
-    "users.read",
-    "users.write",
-    "users.suspend",
+    "crew.read",
+    "crew.write",
+    "owners.read",
+    "owners.write",
     "verifications.read",
     "verifications.approve",
-    "moderation.read",
-    "moderation.act",
-    "disputes.read",
-    "disputes.resolve",
+    "jobs.read",
+    "jobs.write",
+    "applications.read",
+    "applications.write",
     "announcements.send",
     "analytics.read",
     "security.read",
+    "settings.write",
   ],
   moderator: [
-    "users.read",
-    "users.suspend",
+    "crew.read",
+    "crew.write",
+    "owners.read",
+    "owners.write",
     "verifications.read",
     "verifications.approve",
-    "moderation.read",
-    "moderation.act",
-    "disputes.read",
+    "jobs.read",
+    "jobs.write",
+    "applications.read",
+    "analytics.read",
+    "security.read",
+    "announcements.send",
   ],
   "support-agent": [
-    "users.read",
-    "disputes.read",
-    "disputes.resolve",
+    "crew.read",
+    "owners.read",
+    "jobs.read",
+    "applications.read",
     "announcements.send",
   ],
 };
@@ -62,8 +78,14 @@ export const ADMIN_ROLE_LABEL: Record<AdminRole, string> = {
 };
 
 /* ===========================================================
-   Verifications
+   Account & verification
 =========================================================== */
+
+export type AdminAccountStatus =
+  | "active"
+  | "suspended"
+  | "banned"
+  | "pending-verification";
 
 export type VerificationStatus =
   | "pending"
@@ -72,193 +94,176 @@ export type VerificationStatus =
   | "rejected"
   | "additional-info";
 
-export type VerificationSubjectType = "crew" | "owner" | "agent";
+export type VerificationDocumentKind =
+  | "passport"
+  | "visa"
+  | "id-card"
+  | "certification"
+  | "reference"
+  | "business-registration"
+  | "vessel-registration"
+  | "insurance"
+  | "tax-id";
 
 export interface VerificationDocument {
   id: ID;
   name: string;
-  kind:
-    | "passport"
-    | "id-card"
-    | "license"
-    | "certification"
-    | "company-registration"
-    | "tax-document"
-    | "yacht-registration";
+  kind: VerificationDocumentKind;
   url: string;
   thumbUrl?: string;
+  status: "pending" | "verified" | "rejected";
   uploadedAt: ISODateString;
 }
 
-export interface VerificationRequest {
-  id: ID;
-  subjectType: VerificationSubjectType;
-  subject: {
-    id: ID;
-    name: string;
-    email: string;
-    role: UserRole;
-    avatarUrl?: string;
-    location?: string;
-  };
-  status: VerificationStatus;
-  submittedAt: ISODateString;
-  updatedAt: ISODateString;
-  documents: VerificationDocument[];
-  riskScore?: number; // 0–100
-  notes?: string;
-  reviewedBy?: { id: ID; name: string };
-}
-
 /* ===========================================================
-   Admin user view (extends consumer User)
+   Crew profiles
 =========================================================== */
 
-export type AdminAccountStatus =
-  | "active"
-  | "warned"
-  | "suspended"
-  | "banned"
-  | "pending-verification";
+export type CrewAvailability = "available" | "on-contract" | "unavailable";
 
-export interface AdminUserSummary {
+export interface CrewExperienceEntry {
+  yacht: string;
+  yachtType: "motor" | "sail";
+  length: number;
+  role: string;
+  from: ISODateString;
+  to?: ISODateString;
+}
+
+export interface CrewReference {
+  id: ID;
+  name: string;
+  role: string;
+  vessel: string;
+  contact: string;
+  verified: boolean;
+}
+
+export interface CrewCertification {
+  id: ID;
+  name: string;
+  issuer: string;
+  validUntil?: ISODateString;
+  verified: boolean;
+}
+
+export interface CrewProfile {
   id: ID;
   fullName: string;
   email: string;
-  role: UserRole;
-  adminRole?: AdminRole;
   avatarUrl?: string;
+  position: CrewPosition;
+  nationality: string;
+  countryCode: string;
+  location?: string;
   status: AdminAccountStatus;
-  verified: boolean;
+  verificationStatus: VerificationStatus;
   joinedAt: ISODateString;
   lastActiveAt?: ISODateString;
-  jobsPosted?: number;
-  applicationsSubmitted?: number;
-  reportsAgainst?: number;
-  country?: string;
-}
-
-export type ActivityLogKind =
-  | "login"
-  | "logout"
-  | "profile-update"
-  | "job-post"
-  | "job-update"
-  | "application"
-  | "message"
-  | "verification"
-  | "admin-action"
-  | "security";
-
-export interface ActivityLogEntry {
-  id: ID;
-  userId: ID;
-  kind: ActivityLogKind;
-  title: string;
-  description?: string;
-  ip?: string;
-  device?: string;
-  createdAt: ISODateString;
+  bio?: string;
+  passport: { number: string; country: string; expiresAt: ISODateString };
+  visas: { country: string; expiresAt: ISODateString; type: string }[];
+  languages: string[];
+  yearsExperience: number;
+  experience: CrewExperienceEntry[];
+  certifications: CrewCertification[];
+  references: CrewReference[];
+  documents: VerificationDocument[];
+  availability: CrewAvailability;
+  availableFrom?: ISODateString;
+  /** 0–100. Drives the completion ring on the profile page. */
+  profileCompletion: number;
+  applicationsCount: number;
+  hiresCount: number;
+  rating?: number;
 }
 
 /* ===========================================================
-   Content moderation
+   Owner profiles
 =========================================================== */
 
-export type ReportReason =
-  | "fake-listing"
-  | "spam"
-  | "scam"
-  | "duplicate"
-  | "inappropriate"
-  | "off-platform"
-  | "other";
-
-export type ReportSeverity = "low" | "medium" | "high" | "critical";
-
-export type ReportStatus = "open" | "investigating" | "resolved" | "dismissed";
-
-export interface JobReport {
+export interface OwnerVessel {
   id: ID;
-  job: Pick<Job, "id" | "title" | "yacht"> & {
-    postedById: ID;
-    postedByName: string;
-  };
-  reportedBy: { id: ID; name: string; avatarUrl?: string };
-  reason: ReportReason;
-  severity: ReportSeverity;
-  status: ReportStatus;
-  description: string;
-  reportsCount: number;
-  createdAt: ISODateString;
-  updatedAt: ISODateString;
+  name: string;
+  type: "motor" | "sail";
+  length: number;
+  flag: string;
+  yearBuilt?: number;
+  imageUrl?: string;
 }
 
-export type FraudSignalKind =
-  | "duplicate-listing"
-  | "price-anomaly"
-  | "suspicious-account"
-  | "rapid-actions"
-  | "blacklisted-keyword"
-  | "off-platform-contact"
-  | "geo-mismatch";
-
-export type FraudSignalSeverity = "low" | "medium" | "high";
-
-export interface FraudSignal {
+export interface OwnerProfile {
   id: ID;
-  kind: FraudSignalKind;
-  severity: FraudSignalSeverity;
-  title: string;
-  summary: string;
-  subjectType: "user" | "job" | "message";
-  subject: { id: ID; label: string };
-  detectedAt: ISODateString;
-  acknowledged: boolean;
+  fullName: string;
+  email: string;
+  avatarUrl?: string;
+  companyName?: string;
+  vatNumber?: string;
+  country: string;
+  countryCode: string;
+  status: AdminAccountStatus;
+  verificationStatus: VerificationStatus;
+  joinedAt: ISODateString;
+  lastActiveAt?: ISODateString;
+  vessels: OwnerVessel[];
+  documents: VerificationDocument[];
+  jobsPostedCount: number;
+  hiresMadeCount: number;
+  /** 0–100. */
+  profileCompletion: number;
+  notes?: string;
 }
 
 /* ===========================================================
-   Disputes
+   Applications
 =========================================================== */
 
-export type DisputeStatus = "open" | "under-review" | "resolved" | "rejected";
+export type ApplicationStatus =
+  | "pending"
+  | "shortlisted"
+  | "interviewing"
+  | "accepted"
+  | "rejected";
 
-export type DisputeKind =
-  | "payment"
-  | "contract"
-  | "no-show"
-  | "misconduct"
-  | "false-advertising"
-  | "other";
-
-export interface DisputeMessage {
+export interface ApplicationSummary {
   id: ID;
-  authorId: ID;
-  authorName: string;
-  text: string;
-  createdAt: ISODateString;
+  candidate: {
+    id: ID;
+    fullName: string;
+    avatarUrl?: string;
+    position: CrewPosition;
+    nationality: string;
+    yearsExperience: number;
+  };
+  job: {
+    id: ID;
+    title: string;
+    yacht: string;
+    location: string;
+  };
+  owner: {
+    id: ID;
+    name: string;
+    avatarUrl?: string;
+  };
+  status: ApplicationStatus;
+  matchScore?: number; // 0–100, optional
+  appliedAt: ISODateString;
+  updatedAt: ISODateString;
+  coverLetter?: string;
 }
 
-export interface Dispute {
-  id: ID;
-  reference: string; // e.g. DSP-2025-00231
-  kind: DisputeKind;
-  status: DisputeStatus;
-  amount?: { value: number; currency: "EUR" | "USD" | "GBP" };
-  openedBy: { id: ID; name: string; avatarUrl?: string; role: UserRole };
-  against: { id: ID; name: string; avatarUrl?: string; role: UserRole };
-  jobId?: ID;
-  jobTitle?: string;
-  summary: string;
-  conversation: DisputeMessage[];
-  openedAt: ISODateString;
-  updatedAt: ISODateString;
-  resolution?: {
-    decision: "refund" | "partial-refund" | "no-action" | "warning" | "suspension";
-    note: string;
-    by: { id: ID; name: string };
-    at: ISODateString;
-  };
+/* ===========================================================
+   Job stats (admin-side rollup of a job's pipeline)
+=========================================================== */
+
+export interface JobApplicationStats {
+  total: number;
+  pending: number;
+  shortlisted: number;
+  interviewing: number;
+  accepted: number;
+  rejected: number;
 }
 
 /* ===========================================================
@@ -297,6 +302,8 @@ export interface Announcement {
 export interface AnalyticsSnapshot {
   users: {
     total: number;
+    crew: number;
+    owners: number;
     active30d: number;
     newThisWeek: number;
     verificationRate: number; // 0–1
@@ -308,12 +315,15 @@ export interface AnalyticsSnapshot {
     filled: number;
     expired: number;
     avgTimeToFillDays: number;
-    funnel: { stage: string; value: number }[];
+  };
+  applications: {
+    total: number;
+    pending: number;
+    accepted: number;
+    rejected: number;
   };
   engagement: {
-    applicationsSubmitted: number;
-    messagesSent: number;
-    dailyActivity: { d: string; sessions: number; messages: number }[];
+    dailyActivity: { d: string; sessions: number; applications: number }[];
   };
 }
 
@@ -363,7 +373,7 @@ export interface ActiveSession {
    Global search
 =========================================================== */
 
-export type SearchResultKind = "user" | "job" | "report" | "dispute";
+export type SearchResultKind = "crew" | "owner" | "job" | "application";
 
 export interface SearchResult {
   id: ID;
@@ -379,15 +389,11 @@ export interface SearchResponse {
 }
 
 /* ===========================================================
-   Helper data shapes
+   Helpers
 =========================================================== */
 
 export interface PaginatedAdminQuery {
   page?: number;
   pageSize?: number;
   search?: string;
-}
-
-export interface CrewVerificationSummary extends Pick<CrewMember, "id" | "fullName" | "position"> {
-  status: VerificationStatus;
 }

@@ -4,25 +4,19 @@ import { setupListeners } from "@reduxjs/toolkit/query";
 import { baseApi } from "@services/baseApi";
 import { adminApi } from "@services/adminApi";
 import authReducer from "./slices/authSlice";
+import authFlowReducer from "./slices/authFlowSlice";
 import uiReducer from "./slices/uiSlice";
-import chatReducer from "./slices/chatSlice";
-import notificationReducer from "./slices/notificationSlice";
 
 export const store = configureStore({
   reducer: {
     [baseApi.reducerPath]: baseApi.reducer,
     [adminApi.reducerPath]: adminApi.reducer,
     auth: authReducer,
+    authFlow: authFlowReducer,
     ui: uiReducer,
-    chat: chatReducer,
-    notifications: notificationReducer,
   },
   middleware: (getDefault) =>
-    getDefault({
-      serializableCheck: {
-        ignoredActions: ["socket/connected", "socket/disconnected"],
-      },
-    })
+    getDefault()
       .concat(baseApi.middleware)
       .concat(adminApi.middleware),
 });

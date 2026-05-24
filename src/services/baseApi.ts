@@ -1,37 +1,34 @@
 /**
- * Centralised RTK Query API.
+ * Shared RTK Query API for the admin console.
  *
- * For development we use a `mockBaseQuery` that resolves against the in-memory
- * fixtures in `mockData.ts`. To switch to a real backend, replace `mockBaseQuery`
- * with `fetchBaseQuery({ baseUrl: API_BASE_URL, ... })` and remove the mock
- * delay. Endpoint definitions stay the same.
+ * The platform was converted into an admin-only product, so this slice now
+ * exposes only the cross-cutting endpoints that the admin surface needs:
+ *
+ *   - auth (current user, login)
+ *   - jobs (read-only — surfaced in the Job Moderation page)
+ *   - notifications (bell dropdown in the admin topbar)
+ *
+ * Everything else (crew, applications, conversations, schedule) was removed
+ * with the consumer dashboard.
  */
 import { createApi, type BaseQueryFn } from "@reduxjs/toolkit/query/react";
 
 import { ACCESS_TOKEN_KEY } from "@utils/constants";
-import {
-  mockApplications,
-  mockConversations,
-  mockCrew,
-  mockJobs,
-  mockMessages,
-  mockNotifications,
-  mockSchedule,
-  mockUser,
-} from "./mockData";
+import { mockJobs, mockNotifications, mockUser } from "./mockData";
 import type {
-  Application,
-  ApplicationStatus,
+  ForgotPasswordRequest,
+  ForgotPasswordResponse,
+  ResetPasswordRequest,
+  ResetPasswordResponse,
+  VerifyOtpRequest,
+  VerifyOtpResponse,
+} from "@auth/types";
+import type {
   AppNotification,
-  ChatMessage,
-  Conversation,
-  CrewFilters,
-  CrewMember,
+  AuthSession,
   Job,
   LoginPayload,
-  AuthSession,
   PaginatedResponse,
-  ScheduleEvent,
   User,
 } from "@/types";
 
@@ -52,44 +49,42 @@ const paginate = <T,>(
 };
 
 /* ---------------- mutable in-memory stores ---------------- */
-// (allows mutations from the UI to feel real during the demo)
-
-let jobsDb: Job[] = [...mockJobs];
-let applicationsDb: Application[] = [...mockApplications];
-let conversationsDb: Conversation[] = [...mockConversations];
-const messagesDb: Record<string, ChatMessage[]> = JSON.parse(
-  JSON.stringify(mockMessages),
-);
+const jobsDb: Job[] = [...mockJobs];
 let notificationsDb: AppNotification[] = [...mockNotifications];
-let scheduleDb: ScheduleEvent[] = [...mockSchedule];
+
+/* ---------------- mock OTP / reset token store ----------------
+ * In a real backend the OTP would be sent over email/SMS and stored
+ * server-side with an expiry. For demo purposes we keep an in-memory map
+ * keyed by email and use a hard-coded code (`123456`) so QA can complete
+ * the full flow without touching a mailbox.
+ */
+const DEMO_OTP_CODE = "123456";
+const OTP_EXPIRES_IN_SEC = 60;
+const RESET_TOKEN_EXPIRES_IN_SEC = 5 * 60;
+
+interface OtpRecord {
+  code: string;
+  expiresAt: number;
+}
+interface ResetRecord {
+  email: string;
+  expiresAt: number;
+}
+
+const otpStore = new Map<string, OtpRecord>();
+const resetTokenStore = new Map<string, ResetRecord>();
+
+const isValidEmail = (raw: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw);
 
 type MockRequest =
   | { url: "/auth/me" }
   | { url: "/auth/login"; method: "POST"; body: LoginPayload }
+  | { url: "/auth/forgot-password"; method: "POST"; body: ForgotPasswordRequest }
+  | { url: "/auth/verify-otp"; method: "POST"; body: VerifyOtpRequest }
+  | { url: "/auth/reset-password"; method: "POST"; body: ResetPasswordRequest }
   | { url: "/jobs"; params?: { search?: string; status?: string; page?: number } }
-  | { url: "/jobs/byId"; params: { id: string } }
-  | { url: "/jobs"; method: "POST"; body: Partial<Job> }
-  | { url: "/jobs/update"; method: "PATCH"; body: Partial<Job> & { id: string } }
-  | { url: "/jobs/delete"; method: "DELETE"; body: { id: string } }
-  | { url: "/crew"; params?: CrewFilters }
-  | { url: "/crew/byId"; params: { id: string } }
-  | { url: "/applications"; params?: { status?: ApplicationStatus } }
-  | {
-      url: "/applications/status";
-      method: "PATCH";
-      body: { id: string; status: ApplicationStatus };
-    }
-  | { url: "/conversations" }
-  | { url: "/messages"; params: { conversationId: string } }
-  | {
-      url: "/messages";
-      method: "POST";
-      body: { conversationId: string; text: string };
-    }
   | { url: "/notifications" }
-  | { url: "/notifications/read"; method: "PATCH"; body: { id?: string } }
-  | { url: "/schedule" }
-  | { url: "/schedule"; method: "POST"; body: Partial<ScheduleEvent> };
+  | { url: "/notifications/read"; method: "PATCH"; body: { id?: string } };
 
 const mockBaseQuery: BaseQueryFn<MockRequest, unknown, { message: string }> = async (
   arg,
@@ -103,6 +98,13 @@ const mockBaseQuery: BaseQueryFn<MockRequest, unknown, { message: string }> = as
 
       case "/auth/login": {
         if (arg.method !== "POST") break;
+        const { email, password } = arg.body;
+        if (!isValidEmail(email)) {
+          return { error: { message: "Enter a valid email address." } };
+        }
+        if (!password || password.length < 6) {
+          return { error: { message: "Incorrect email or password." } };
+        }
         const session: AuthSession = {
           user: mockUser,
           accessToken: "demo-token",
@@ -112,184 +114,98 @@ const mockBaseQuery: BaseQueryFn<MockRequest, unknown, { message: string }> = as
         return { data: session };
       }
 
-      case "/jobs": {
-        if ("method" in arg && arg.method === "POST") {
-          const id = `job_${Date.now()}`;
-          const newJob: Job = {
-            id,
-            title: arg.body.title ?? "Untitled job",
-            position: arg.body.position ?? "stewardess",
-            status: arg.body.status ?? "open",
-            contractType: arg.body.contractType ?? "permanent",
-            yacht:
-              arg.body.yacht ?? {
-                name: "Untitled yacht",
-                length: 0,
-                type: "motor",
-              },
-            description: arg.body.description ?? "",
-            responsibilities: arg.body.responsibilities ?? [],
-            requirements: arg.body.requirements ?? [],
-            certifications: arg.body.certifications ?? [],
-            languages: arg.body.languages ?? [],
-            salary:
-              arg.body.salary ?? {
-                currency: "EUR",
-                min: 0,
-                max: 0,
-                period: "monthly",
-              },
-            location: arg.body.location ?? "",
-            startDate: arg.body.startDate ?? new Date().toISOString(),
-            endDate: arg.body.endDate,
-            applicationsCount: 0,
-            shortlistedCount: 0,
-            postedById: mockUser.id,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          };
-          jobsDb = [newJob, ...jobsDb];
-          return { data: newJob };
+      case "/auth/forgot-password": {
+        if (arg.method !== "POST") break;
+        const email = arg.body.email.trim().toLowerCase();
+        if (!isValidEmail(email)) {
+          return { error: { message: "Enter a valid email address." } };
         }
-        const filtered = jobsDb.filter((j) => {
-          if (!("params" in arg) || !arg.params) return true;
-          if (arg.params.status && j.status !== arg.params.status) return false;
-          if (arg.params.search) {
-            const q = arg.params.search.toLowerCase();
-            return (
+        otpStore.set(email, {
+          code: DEMO_OTP_CODE,
+          expiresAt: Date.now() + OTP_EXPIRES_IN_SEC * 1000,
+        });
+        const payload: ForgotPasswordResponse = {
+          delivery: "email",
+          expiresInSec: OTP_EXPIRES_IN_SEC,
+          hintCode: DEMO_OTP_CODE,
+        };
+        return { data: payload };
+      }
+
+      case "/auth/verify-otp": {
+        if (arg.method !== "POST") break;
+        const email = arg.body.email.trim().toLowerCase();
+        const code = arg.body.code.trim();
+        const record = otpStore.get(email);
+        if (!record) {
+          return {
+            error: { message: "Request a new OTP — this one is no longer valid." },
+          };
+        }
+        if (Date.now() > record.expiresAt) {
+          otpStore.delete(email);
+          return { error: { message: "This OTP has expired. Please request a new one." } };
+        }
+        if (code !== record.code) {
+          return { error: { message: "Incorrect code. Please try again." } };
+        }
+        otpStore.delete(email);
+        const token = `rst_${Math.random().toString(36).slice(2)}_${Date.now()}`;
+        resetTokenStore.set(token, {
+          email,
+          expiresAt: Date.now() + RESET_TOKEN_EXPIRES_IN_SEC * 1000,
+        });
+        const payload: VerifyOtpResponse = {
+          resetToken: token,
+          expiresInSec: RESET_TOKEN_EXPIRES_IN_SEC,
+        };
+        return { data: payload };
+      }
+
+      case "/auth/reset-password": {
+        if (arg.method !== "POST") break;
+        const record = resetTokenStore.get(arg.body.resetToken);
+        if (!record) {
+          return {
+            error: {
+              message:
+                "Reset link expired or invalid. Please request a new OTP.",
+            },
+          };
+        }
+        if (Date.now() > record.expiresAt) {
+          resetTokenStore.delete(arg.body.resetToken);
+          return {
+            error: { message: "Reset link expired. Please request a new OTP." },
+          };
+        }
+        if (arg.body.password.length < 8) {
+          return {
+            error: { message: "Choose a stronger password (8+ characters)." },
+          };
+        }
+        resetTokenStore.delete(arg.body.resetToken);
+        const payload: ResetPasswordResponse = { success: true };
+        return { data: payload };
+      }
+
+      case "/jobs": {
+        const params = (arg as { params?: { search?: string; status?: string; page?: number } })
+          .params;
+        let list = [...jobsDb];
+        if (params?.search) {
+          const q = params.search.toLowerCase();
+          list = list.filter(
+            (j) =>
               j.title.toLowerCase().includes(q) ||
               j.yacht.name.toLowerCase().includes(q) ||
-              j.location.toLowerCase().includes(q)
-            );
-          }
-          return true;
-        });
-        return { data: paginate(filtered, arg.params?.page ?? 1, 10) };
-      }
-
-      case "/jobs/byId": {
-        const job = jobsDb.find((j) => j.id === arg.params.id);
-        if (!job) return { error: { message: "Job not found" } };
-        return { data: job };
-      }
-
-      case "/jobs/update": {
-        if (arg.method !== "PATCH") break;
-        jobsDb = jobsDb.map((j) =>
-          j.id === arg.body.id
-            ? { ...j, ...arg.body, updatedAt: new Date().toISOString() }
-            : j,
-        );
-        return { data: jobsDb.find((j) => j.id === arg.body.id)! };
-      }
-
-      case "/jobs/delete": {
-        if (arg.method !== "DELETE") break;
-        jobsDb = jobsDb.filter((j) => j.id !== arg.body.id);
-        return { data: { id: arg.body.id } };
-      }
-
-      case "/crew": {
-        const params = arg.params ?? {};
-        const filtered = mockCrew.filter((c) => {
-          if (params.position && c.position !== params.position) return false;
-          if (params.availability && c.availability !== params.availability)
-            return false;
-          if (
-            params.minExperience &&
-            c.yearsOfExperience < params.minExperience
-          )
-            return false;
-          if (
-            params.location &&
-            !c.location.toLowerCase().includes(params.location.toLowerCase())
-          )
-            return false;
-          if (
-            params.certifications &&
-            params.certifications.length > 0 &&
-            !params.certifications.every((cert) =>
-              c.certifications.some((cc) =>
-                cc.name.toLowerCase().includes(cert.toLowerCase()),
-              ),
-            )
-          )
-            return false;
-          if (params.search) {
-            const q = params.search.toLowerCase();
-            return (
-              c.fullName.toLowerCase().includes(q) ||
-              c.headline.toLowerCase().includes(q) ||
-              c.location.toLowerCase().includes(q)
-            );
-          }
-          return true;
-        });
-        return {
-          data: paginate(filtered, params.page ?? 1, params.pageSize ?? 12),
-        };
-      }
-
-      case "/crew/byId": {
-        const c = mockCrew.find((x) => x.id === arg.params.id);
-        if (!c) return { error: { message: "Crew not found" } };
-        return { data: c };
-      }
-
-      case "/applications": {
-        const params = "params" in arg ? arg.params : undefined;
-        const filtered = params?.status
-          ? applicationsDb.filter((a) => a.status === params.status)
-          : applicationsDb;
-        return { data: filtered };
-      }
-
-      case "/applications/status": {
-        if (arg.method !== "PATCH") break;
-        applicationsDb = applicationsDb.map((a) =>
-          a.id === arg.body.id
-            ? {
-                ...a,
-                status: arg.body.status,
-                updatedAt: new Date().toISOString(),
-              }
-            : a,
-        );
-        return { data: applicationsDb.find((a) => a.id === arg.body.id)! };
-      }
-
-      case "/conversations":
-        return { data: conversationsDb };
-
-      case "/messages": {
-        if ("method" in arg && arg.method === "POST") {
-          const id = `msg_${Date.now()}`;
-          const message: ChatMessage = {
-            id,
-            conversationId: arg.body.conversationId,
-            senderId: mockUser.id,
-            text: arg.body.text,
-            createdAt: new Date().toISOString(),
-            status: "sent",
-          };
-          messagesDb[arg.body.conversationId] = [
-            ...(messagesDb[arg.body.conversationId] ?? []),
-            message,
-          ];
-          conversationsDb = conversationsDb.map((c) =>
-            c.id === arg.body.conversationId
-              ? {
-                  ...c,
-                  lastMessage: message,
-                  updatedAt: message.createdAt,
-                }
-              : c,
+              j.location.toLowerCase().includes(q),
           );
-          return { data: message };
         }
-        return {
-          data: messagesDb[arg.params.conversationId] ?? [],
-        };
+        if (params?.status) {
+          list = list.filter((j) => j.status === params.status);
+        }
+        return { data: paginate(list, params?.page ?? 1, 25) };
       }
 
       case "/notifications":
@@ -303,29 +219,10 @@ const mockBaseQuery: BaseQueryFn<MockRequest, unknown, { message: string }> = as
         return { data: notificationsDb };
       }
 
-      case "/schedule": {
-        if ("method" in arg && arg.method === "POST") {
-          const newEvent: ScheduleEvent = {
-            id: `sch_${Date.now()}`,
-            type: arg.body.type ?? "interview",
-            title: arg.body.title ?? "Untitled event",
-            startAt: arg.body.startAt ?? new Date().toISOString(),
-            endAt: arg.body.endAt,
-            participants: arg.body.participants ?? [],
-            description: arg.body.description,
-            jobId: arg.body.jobId,
-            applicationId: arg.body.applicationId,
-            location: arg.body.location,
-            meetingUrl: arg.body.meetingUrl,
-          };
-          scheduleDb = [newEvent, ...scheduleDb];
-          return { data: newEvent };
-        }
-        return { data: scheduleDb };
-      }
-
       default:
-        return { error: { message: `Unhandled mock route: ${(arg as { url: string }).url}` } };
+        return {
+          error: { message: `Unhandled mock route: ${(arg as { url: string }).url}` },
+        };
     }
   } catch (err) {
     return {
@@ -335,25 +232,13 @@ const mockBaseQuery: BaseQueryFn<MockRequest, unknown, { message: string }> = as
   return { error: { message: "Method not implemented for route" } };
 };
 
-/* ---------------- API definition ---------------- */
+/* ---------------- API ---------------- */
 
 export const baseApi = createApi({
   reducerPath: "api",
   baseQuery: mockBaseQuery,
-  tagTypes: [
-    "Auth",
-    "Jobs",
-    "Job",
-    "Crew",
-    "CrewProfile",
-    "Applications",
-    "Conversations",
-    "Messages",
-    "Notifications",
-    "Schedule",
-  ] as const,
+  tagTypes: ["Auth", "Jobs", "Notifications"] as const,
   endpoints: (b) => ({
-    /* ---------- AUTH ---------- */
     me: b.query<User, void>({
       query: () => ({ url: "/auth/me" }),
       providesTags: ["Auth"],
@@ -363,103 +248,19 @@ export const baseApi = createApi({
       invalidatesTags: ["Auth"],
     }),
 
-    /* ---------- JOBS ---------- */
     listJobs: b.query<
       PaginatedResponse<Job>,
       { search?: string; status?: string; page?: number } | void
     >({
       query: (params) => ({
         url: "/jobs",
-        params: (params as { search?: string; status?: string; page?: number }) ?? undefined,
+        params:
+          (params as { search?: string; status?: string; page?: number }) ??
+          undefined,
       }),
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.map((j) => ({ type: "Job" as const, id: j.id })),
-              { type: "Jobs" as const, id: "LIST" },
-            ]
-          : [{ type: "Jobs", id: "LIST" }],
-    }),
-    getJob: b.query<Job, string>({
-      query: (id) => ({ url: "/jobs/byId", params: { id } }),
-      providesTags: (_r, _e, id) => [{ type: "Job", id }],
-    }),
-    createJob: b.mutation<Job, Partial<Job>>({
-      query: (body) => ({ url: "/jobs", method: "POST", body }),
-      invalidatesTags: [{ type: "Jobs", id: "LIST" }],
-    }),
-    updateJob: b.mutation<Job, Partial<Job> & { id: string }>({
-      query: (body) => ({ url: "/jobs/update", method: "PATCH", body }),
-      invalidatesTags: (_r, _e, body) => [
-        { type: "Job", id: body.id },
-        { type: "Jobs", id: "LIST" },
-      ],
-    }),
-    deleteJob: b.mutation<{ id: string }, string>({
-      query: (id) => ({ url: "/jobs/delete", method: "DELETE", body: { id } }),
-      invalidatesTags: [{ type: "Jobs", id: "LIST" }],
+      providesTags: ["Jobs"],
     }),
 
-    /* ---------- CREW ---------- */
-    listCrew: b.query<PaginatedResponse<CrewMember>, CrewFilters | void>({
-      query: (params) => ({ url: "/crew", params: params as CrewFilters | undefined }),
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.data.map((c) => ({ type: "CrewProfile" as const, id: c.id })),
-              { type: "Crew" as const, id: "LIST" },
-            ]
-          : [{ type: "Crew", id: "LIST" }],
-    }),
-    getCrew: b.query<CrewMember, string>({
-      query: (id) => ({ url: "/crew/byId", params: { id } }),
-      providesTags: (_r, _e, id) => [{ type: "CrewProfile", id }],
-    }),
-
-    /* ---------- APPLICATIONS ---------- */
-    listApplications: b.query<Application[], ApplicationStatus | void>({
-      query: (status) => ({
-        url: "/applications",
-        params: status ? { status } : undefined,
-      }),
-      providesTags: ["Applications"],
-    }),
-    updateApplicationStatus: b.mutation<
-      Application,
-      { id: string; status: ApplicationStatus }
-    >({
-      query: (body) => ({
-        url: "/applications/status",
-        method: "PATCH",
-        body,
-      }),
-      invalidatesTags: ["Applications"],
-    }),
-
-    /* ---------- CHAT ---------- */
-    listConversations: b.query<Conversation[], void>({
-      query: () => ({ url: "/conversations" }),
-      providesTags: ["Conversations"],
-    }),
-    listMessages: b.query<ChatMessage[], string>({
-      query: (conversationId) => ({
-        url: "/messages",
-        params: { conversationId },
-      }),
-      providesTags: (_r, _e, id) => [{ type: "Messages", id }],
-    }),
-    sendMessage: b.mutation<
-      ChatMessage,
-      { conversationId: string; text: string }
-    >({
-      query: (body) => ({ url: "/messages", method: "POST", body }),
-      invalidatesTags: (_r, _e, arg) => [
-        { type: "Messages", id: arg.conversationId },
-        "Conversations",
-      ],
-    }),
-
-    /* ---------- NOTIFICATIONS ---------- */
     listNotifications: b.query<AppNotification[], void>({
       query: () => ({ url: "/notifications" }),
       providesTags: ["Notifications"],
@@ -472,16 +273,6 @@ export const baseApi = createApi({
       }),
       invalidatesTags: ["Notifications"],
     }),
-
-    /* ---------- SCHEDULE ---------- */
-    listSchedule: b.query<ScheduleEvent[], void>({
-      query: () => ({ url: "/schedule" }),
-      providesTags: ["Schedule"],
-    }),
-    createScheduleEvent: b.mutation<ScheduleEvent, Partial<ScheduleEvent>>({
-      query: (body) => ({ url: "/schedule", method: "POST", body }),
-      invalidatesTags: ["Schedule"],
-    }),
   }),
 });
 
@@ -489,19 +280,6 @@ export const {
   useMeQuery,
   useLoginMutation,
   useListJobsQuery,
-  useGetJobQuery,
-  useCreateJobMutation,
-  useUpdateJobMutation,
-  useDeleteJobMutation,
-  useListCrewQuery,
-  useGetCrewQuery,
-  useListApplicationsQuery,
-  useUpdateApplicationStatusMutation,
-  useListConversationsQuery,
-  useListMessagesQuery,
-  useSendMessageMutation,
   useListNotificationsQuery,
   useMarkNotificationReadMutation,
-  useListScheduleQuery,
-  useCreateScheduleEventMutation,
 } = baseApi;

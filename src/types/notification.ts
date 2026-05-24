@@ -1,10 +1,13 @@
 import type { ID, ISODateString } from "./common";
 
 export type NotificationCategory =
-  | "application"
-  | "message"
-  | "interview"
+  | "verification"
+  | "crew"
+  | "owner"
   | "job"
+  | "application"
+  | "security"
+  | "announcement"
   | "system";
 
 export interface AppNotification {
@@ -12,8 +15,8 @@ export interface AppNotification {
   category: NotificationCategory;
   title: string;
   body?: string;
+  href?: string;
   read: boolean;
   createdAt: ISODateString;
-  actionUrl?: string;
   meta?: Record<string, string | number | boolean>;
 }

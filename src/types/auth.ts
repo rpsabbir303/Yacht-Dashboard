@@ -1,6 +1,14 @@
 import type { ID, ISODateString } from "./common";
 import type { AdminRole } from "./admin";
 
+/**
+ * Platform-wide role definition.
+ *
+ * - `admin` covers anyone with access to the management console (the only
+ *   surface the app exposes today).
+ * - The non-admin roles are kept because the admin console still _references_
+ *   crew/owner/agent accounts as subjects of moderation actions.
+ */
 export type UserRole = "owner" | "captain" | "agent" | "admin";
 
 export interface User {

@@ -1,17 +1,18 @@
 import {
+  AlertOutlined,
+  AppstoreOutlined,
   BellOutlined,
-  CalendarOutlined,
   CheckOutlined,
-  FileSearchOutlined,
-  MessageOutlined,
+  NotificationOutlined,
   SafetyOutlined,
+  SettingOutlined,
+  SolutionOutlined,
   TeamOutlined,
+  UserOutlined,
 } from "@ant-design/icons";
 import { Badge, Dropdown, Empty } from "antd";
-import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 
-import { useAppSelector } from "@redux/hooks";
 import {
   useListNotificationsQuery,
   useMarkNotificationReadMutation,
@@ -22,34 +23,28 @@ import type { AppNotification, NotificationCategory } from "@/types";
 
 const CATEGORY_META: Record<
   NotificationCategory,
-  { icon: React.ReactNode }
+  { icon: React.ReactNode; tone: string }
 > = {
-  application: { icon: <TeamOutlined /> },
-  message: { icon: <MessageOutlined /> },
-  interview: { icon: <CalendarOutlined /> },
-  job: { icon: <FileSearchOutlined /> },
-  system: { icon: <SafetyOutlined /> },
+  verification: { icon: <SafetyOutlined />, tone: "text-gold-400" },
+  crew: { icon: <TeamOutlined />, tone: "text-teal-300" },
+  owner: { icon: <UserOutlined />, tone: "text-gold-400" },
+  job: { icon: <AppstoreOutlined />, tone: "text-white" },
+  application: { icon: <SolutionOutlined />, tone: "text-teal-300" },
+  security: { icon: <AlertOutlined />, tone: "text-[#C24545]" },
+  announcement: { icon: <NotificationOutlined />, tone: "text-teal-300" },
+  system: { icon: <SettingOutlined />, tone: "text-grey-400" },
 };
 
 export const NotificationDropdown = () => {
   const navigate = useNavigate();
-  const { data: serverItems = [] } = useListNotificationsQuery();
-  const realtime = useAppSelector((s) => s.notifications.realtime);
+  const { data: items = [] } = useListNotificationsQuery();
   const [markRead] = useMarkNotificationReadMutation();
-
-  const items = useMemo<AppNotification[]>(
-    () =>
-      [...realtime, ...serverItems].filter(
-        (n, idx, arr) => arr.findIndex((x) => x.id === n.id) === idx,
-      ),
-    [realtime, serverItems],
-  );
 
   const unread = items.filter((n) => !n.read).length;
 
   const onClickItem = (n: AppNotification) => {
     if (!n.read) markRead(n.id);
-    if (n.actionUrl) navigate(n.actionUrl);
+    if (n.href) navigate(n.href);
   };
 
   return (
@@ -62,7 +57,7 @@ export const NotificationDropdown = () => {
           <div className="flex items-center justify-between border-b border-white/[0.05] px-5 py-4">
             <div>
               <div className="text-[13px] font-semibold text-white">
-                Notifications
+                Admin notifications
               </div>
               <div className="mt-0.5 text-[11px] text-grey-500">
                 {unread} unread
@@ -99,7 +94,12 @@ export const NotificationDropdown = () => {
                           !n.read && "bg-white/[0.015]",
                         )}
                       >
-                        <span className="mt-0.5 grid h-8 w-8 place-items-center rounded-xl border border-white/[0.05] bg-white/[0.02] text-grey-400">
+                        <span
+                          className={cn(
+                            "mt-0.5 grid h-8 w-8 place-items-center rounded-xl border border-white/[0.05] bg-white/[0.02]",
+                            meta.tone,
+                          )}
+                        >
                           {meta.icon}
                         </span>
                         <div className="min-w-0 flex-1">
@@ -130,10 +130,10 @@ export const NotificationDropdown = () => {
 
           <div className="border-t border-white/[0.05] px-5 py-3 text-right">
             <button
-              onClick={() => navigate("/notifications")}
+              onClick={() => navigate("/admin/notifications")}
               className="text-[12px] font-medium text-teal-300 hover:text-teal-200"
             >
-              View all
+              Manage announcements
             </button>
           </div>
         </div>

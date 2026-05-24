@@ -6,7 +6,6 @@ import { ConfigProvider, App as AntApp, theme as antTheme } from "antd";
 
 import { store } from "@redux/store";
 import { AuthProvider } from "@app/AuthProvider";
-import { SocketProvider } from "@socket/SocketProvider";
 import App from "@app/App";
 
 import "antd/dist/reset.css";
@@ -63,9 +62,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <AntApp>
           <BrowserRouter>
             <AuthProvider>
-              <SocketProvider>
-                <App />
-              </SocketProvider>
+              <App />
             </AuthProvider>
           </BrowserRouter>
         </AntApp>

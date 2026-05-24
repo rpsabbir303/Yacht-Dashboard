@@ -15,7 +15,7 @@ interface Props {
 }
 
 /**
- * Gates an admin route. Non-admins are redirected to /dashboard.
+ * Gates an admin route. Non-admins are redirected to /auth/sign-in.
  * Authenticated admins lacking the required permission/role are redirected
  * to `redirectTo` (default: /admin).
  */
@@ -27,7 +27,7 @@ export const AdminRoute = ({
 }: Props) => {
   const { isAdmin, hasAllPermissions, requireRole } = usePermission();
 
-  if (!isAdmin) return <Navigate to="/dashboard" replace />;
+  if (!isAdmin) return <Navigate to="/auth/sign-in" replace />;
 
   if (roles && !requireRole(roles)) {
     return <Navigate to={redirectTo} replace />;

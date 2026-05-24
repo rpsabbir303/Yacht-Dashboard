@@ -1,9 +1,9 @@
 import { cn } from "@utils/cn";
 import type {
   AdminAccountStatus,
-  DisputeStatus,
-  ReportSeverity,
-  ReportStatus,
+  ApplicationStatus,
+  CrewAvailability,
+  JobStatus,
   VerificationStatus,
 } from "@/types";
 
@@ -55,30 +55,36 @@ const ACCOUNT: Record<
   { label: string; tone: Tone }
 > = {
   active: { label: "Active", tone: "teal" },
-  warned: { label: "Warned", tone: "gold" },
   suspended: { label: "Suspended", tone: "danger" },
   banned: { label: "Banned", tone: "danger" },
   "pending-verification": { label: "Pending verification", tone: "neutral" },
 };
 
-const REPORT_STATUS: Record<ReportStatus, { label: string; tone: Tone }> = {
-  open: { label: "Open", tone: "white" },
-  investigating: { label: "Investigating", tone: "gold" },
-  resolved: { label: "Resolved", tone: "teal" },
-  dismissed: { label: "Dismissed", tone: "neutral" },
+const AVAILABILITY: Record<
+  CrewAvailability,
+  { label: string; tone: Tone }
+> = {
+  available: { label: "Available", tone: "teal" },
+  "on-contract": { label: "On contract", tone: "white" },
+  unavailable: { label: "Unavailable", tone: "neutral" },
 };
 
-const REPORT_SEVERITY: Record<ReportSeverity, { label: string; tone: Tone }> = {
-  low: { label: "Low", tone: "neutral" },
-  medium: { label: "Medium", tone: "gold" },
-  high: { label: "High", tone: "danger" },
-  critical: { label: "Critical", tone: "danger" },
+const JOB: Record<JobStatus, { label: string; tone: Tone }> = {
+  draft: { label: "Draft", tone: "neutral" },
+  open: { label: "Open", tone: "teal" },
+  paused: { label: "Paused", tone: "gold" },
+  closed: { label: "Closed", tone: "neutral" },
+  filled: { label: "Filled", tone: "white" },
 };
 
-const DISPUTE: Record<DisputeStatus, { label: string; tone: Tone }> = {
-  open: { label: "Open", tone: "white" },
-  "under-review": { label: "Under review", tone: "gold" },
-  resolved: { label: "Resolved", tone: "teal" },
+const APPLICATION: Record<
+  ApplicationStatus,
+  { label: string; tone: Tone }
+> = {
+  pending: { label: "Pending", tone: "neutral" },
+  shortlisted: { label: "Shortlisted", tone: "gold" },
+  interviewing: { label: "Interviewing", tone: "white" },
+  accepted: { label: "Accepted", tone: "teal" },
   rejected: { label: "Rejected", tone: "danger" },
 };
 
@@ -100,20 +106,20 @@ type Props =
       className?: string;
     }
   | {
-      kind: "report-status";
-      value: ReportStatus;
+      kind: "availability";
+      value: CrewAvailability;
       variant?: Variant;
       className?: string;
     }
   | {
-      kind: "report-severity";
-      value: ReportSeverity;
+      kind: "job";
+      value: JobStatus;
       variant?: Variant;
       className?: string;
     }
   | {
-      kind: "dispute";
-      value: DisputeStatus;
+      kind: "application";
+      value: ApplicationStatus;
       variant?: Variant;
       className?: string;
     };
@@ -124,12 +130,12 @@ const resolve = (props: Props): { label: string; tone: Tone } => {
       return VERIFICATION[props.value];
     case "account":
       return ACCOUNT[props.value];
-    case "report-status":
-      return REPORT_STATUS[props.value];
-    case "report-severity":
-      return REPORT_SEVERITY[props.value];
-    case "dispute":
-      return DISPUTE[props.value];
+    case "availability":
+      return AVAILABILITY[props.value];
+    case "job":
+      return JOB[props.value];
+    case "application":
+      return APPLICATION[props.value];
   }
 };
 

@@ -26,11 +26,11 @@
       "@layouts/*": ["src/layouts/*"],
       "@pages/*": ["src/pages/*"],
       "@components/*": ["src/components/*"],
-      "@modules/*": ["src/modules/*"],
+      "@admin/*": ["src/admin/*"],
+      "@auth/*": ["src/auth/*"],
       "@redux/*": ["src/redux/*"],
       "@services/*": ["src/services/*"],
       "@hooks/*": ["src/hooks/*"],
-      "@socket/*": ["src/socket/*"],
       "@utils/*": ["src/utils/*"],
       "@assets/*": ["src/assets/*"]
     }

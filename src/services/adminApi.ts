@@ -1,48 +1,45 @@
 /**
  * Admin RTK Query API.
  *
- * Self-contained slice — does not depend on or extend `baseApi`. Lives on its
- * own reducer path so the consumer-facing API stays clean and the admin
- * layer can be enabled / disabled / lazy-loaded independently.
+ * Self-contained slice — does not depend on or extend `baseApi`. Replace
+ * `adminMockBaseQuery` with `fetchBaseQuery({ baseUrl })` to wire up a real
+ * backend; every endpoint signature stays the same.
  *
- * Replace `adminMockBaseQuery` with `fetchBaseQuery({ baseUrl })` to wire up
- * a real backend — every endpoint signature stays the same.
+ * Scoped to the *practical* yacht-hiring admin surface — crew, owners, jobs,
+ * applications, analytics, announcements and security. Anything that used
+ * to power reports / fraud / disputes / moderation has been removed.
  */
 import { createApi, type BaseQueryFn } from "@reduxjs/toolkit/query/react";
 
 import {
   mockActiveSessions,
-  mockActivityLogs,
-  mockAdminUsers,
   mockAnalytics,
   mockAnnouncements,
+  mockApplications,
   mockAuditTrail,
-  mockDisputes,
-  mockFraudSignals,
-  mockJobReports,
+  mockCrewProfiles,
+  mockOwnerProfiles,
   mockSecurityEvents,
-  mockVerifications,
 } from "./adminMockData";
 import { mockJobs, mockUser } from "./mockData";
 import type {
   ActiveSession,
-  ActivityLogEntry,
   AdminAccountStatus,
   AdminAuditEntry,
-  AdminUserSummary,
   AnalyticsSnapshot,
   Announcement,
   AnnouncementAudience,
   AnnouncementChannel,
-  Dispute,
-  DisputeStatus,
-  FraudSignal,
-  JobReport,
-  ReportStatus,
+  ApplicationStatus,
+  ApplicationSummary,
+  CrewAvailability,
+  CrewPosition,
+  CrewProfile,
+  JobApplicationStats,
+  OwnerProfile,
   SearchResponse,
   SearchResult,
   SecurityEvent,
-  VerificationRequest,
   VerificationStatus,
 } from "@/types";
 
@@ -52,25 +49,83 @@ const delay = (ms = 220) => new Promise((r) => setTimeout(r, ms));
 
 /* ---------------- mutable in-memory stores ---------------- */
 
-let verificationsDb: VerificationRequest[] = [...mockVerifications];
-let usersDb: AdminUserSummary[] = [...mockAdminUsers];
-let reportsDb: JobReport[] = [...mockJobReports];
-let fraudDb: FraudSignal[] = [...mockFraudSignals];
-let disputesDb: Dispute[] = [...mockDisputes];
+let crewDb: CrewProfile[] = [...mockCrewProfiles];
+let ownersDb: OwnerProfile[] = [...mockOwnerProfiles];
+let applicationsDb: ApplicationSummary[] = [...mockApplications];
 let announcementsDb: Announcement[] = [...mockAnnouncements];
 let sessionsDb: ActiveSession[] = [...mockActiveSessions];
 let auditDb: AdminAuditEntry[] = [...mockAuditTrail];
-const activityDb: Record<string, ActivityLogEntry[]> = JSON.parse(
-  JSON.stringify(mockActivityLogs),
-);
+
+const recordAudit = (
+  action: string,
+  target?: { type: string; id: string; label: string },
+) => {
+  auditDb = [
+    {
+      id: `au_${Date.now()}`,
+      admin: {
+        id: mockUser.id,
+        name: mockUser.fullName,
+        role: mockUser.adminRole ?? "super-admin",
+      },
+      action,
+      target,
+      createdAt: new Date().toISOString(),
+    },
+    ...auditDb,
+  ];
+};
+
+const computeJobStats = (jobId: string): JobApplicationStats => {
+  const apps = applicationsDb.filter((a) => a.job.id === jobId);
+  return {
+    total: apps.length,
+    pending: apps.filter((a) => a.status === "pending").length,
+    shortlisted: apps.filter((a) => a.status === "shortlisted").length,
+    interviewing: apps.filter((a) => a.status === "interviewing").length,
+    accepted: apps.filter((a) => a.status === "accepted").length,
+    rejected: apps.filter((a) => a.status === "rejected").length,
+  };
+};
 
 /* ---------------- mock base query ---------------- */
 
 type AdminRequest =
-  | { url: "/admin/verifications"; params?: { status?: VerificationStatus | "all" } }
-  | { url: "/admin/verifications/byId"; params: { id: string } }
+  /* ---- crew ---- */
   | {
-      url: "/admin/verifications/decide";
+      url: "/admin/crew";
+      params?: {
+        search?: string;
+        position?: CrewPosition | "all";
+        nationality?: string;
+        certification?: string;
+        availability?: CrewAvailability | "all";
+        status?: AdminAccountStatus | "all";
+      };
+    }
+  | { url: "/admin/crew/byId"; params: { id: string } }
+  | {
+      url: "/admin/crew/verification";
+      method: "PATCH";
+      body: { id: string; decision: VerificationStatus; note?: string };
+    }
+  | {
+      url: "/admin/crew/status";
+      method: "PATCH";
+      body: { id: string; status: AdminAccountStatus; reason?: string };
+    }
+  /* ---- owners ---- */
+  | {
+      url: "/admin/owners";
+      params?: {
+        search?: string;
+        verification?: VerificationStatus | "all";
+        status?: AdminAccountStatus | "all";
+      };
+    }
+  | { url: "/admin/owners/byId"; params: { id: string } }
+  | {
+      url: "/admin/owners/verification";
       method: "PATCH";
       body: {
         id: string;
@@ -79,57 +134,29 @@ type AdminRequest =
       };
     }
   | {
-      url: "/admin/users";
-      params?: {
-        search?: string;
-        status?: AdminAccountStatus | "all";
-        role?: "all" | "owner" | "captain" | "agent";
-      };
-    }
-  | { url: "/admin/users/byId"; params: { id: string } }
-  | { url: "/admin/users/activity"; params: { id: string } }
-  | {
-      url: "/admin/users/status";
+      url: "/admin/owners/status";
       method: "PATCH";
       body: { id: string; status: AdminAccountStatus; reason?: string };
     }
+  /* ---- jobs ---- */
+  | { url: "/admin/jobs"; params?: { search?: string; status?: string } }
+  | { url: "/admin/jobs/byId"; params: { id: string } }
+  /* ---- applications ---- */
   | {
-      url: "/admin/users/verification";
-      method: "DELETE";
-      body: { id: string };
-    }
-  | { url: "/admin/reported-jobs"; params?: { status?: ReportStatus | "all" } }
-  | {
-      url: "/admin/reported-jobs/decide";
-      method: "PATCH";
-      body: {
-        id: string;
-        action: "remove" | "suspend" | "dismiss" | "warn";
-        note?: string;
+      url: "/admin/applications";
+      params?: {
+        search?: string;
+        status?: ApplicationStatus | "all";
+        jobId?: string;
       };
     }
-  | { url: "/admin/fraud-signals" }
+  | { url: "/admin/applications/byId"; params: { id: string } }
   | {
-      url: "/admin/fraud-signals/ack";
+      url: "/admin/applications/status";
       method: "PATCH";
-      body: { id: string };
+      body: { id: string; status: ApplicationStatus };
     }
-  | { url: "/admin/disputes"; params?: { status?: DisputeStatus | "all" } }
-  | { url: "/admin/disputes/byId"; params: { id: string } }
-  | {
-      url: "/admin/disputes/resolve";
-      method: "PATCH";
-      body: {
-        id: string;
-        decision: "refund" | "partial-refund" | "no-action" | "warning" | "suspension";
-        note: string;
-      };
-    }
-  | {
-      url: "/admin/disputes/status";
-      method: "PATCH";
-      body: { id: string; status: DisputeStatus };
-    }
+  /* ---- announcements ---- */
   | { url: "/admin/announcements" }
   | {
       url: "/admin/announcements";
@@ -143,6 +170,7 @@ type AdminRequest =
       };
     }
   | { url: "/admin/announcements/delete"; method: "DELETE"; body: { id: string } }
+  /* ---- analytics + security ---- */
   | { url: "/admin/analytics" }
   | { url: "/admin/security/events" }
   | { url: "/admin/security/audit" }
@@ -152,6 +180,7 @@ type AdminRequest =
       method: "DELETE";
       body: { id: string };
     }
+  /* ---- global search ---- */
   | { url: "/admin/search"; params: { q: string } };
 
 const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }> = async (
@@ -161,71 +190,41 @@ const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }
 
   try {
     switch (arg.url) {
-      /* ---------- VERIFICATIONS ---------- */
+      /* ====================================================
+         CREW
+      ==================================================== */
 
-      case "/admin/verifications": {
-        const status = arg.params?.status;
-        const data =
-          !status || status === "all"
-            ? verificationsDb
-            : verificationsDb.filter((v) => v.status === status);
-        return { data };
-      }
-
-      case "/admin/verifications/byId": {
-        const found = verificationsDb.find((v) => v.id === arg.params.id);
-        if (!found) return { error: { message: "Not found" } };
-        return { data: found };
-      }
-
-      case "/admin/verifications/decide": {
-        if (arg.method !== "PATCH") break;
-        verificationsDb = verificationsDb.map((v) =>
-          v.id === arg.body.id
-            ? {
-                ...v,
-                status: arg.body.decision,
-                notes: arg.body.note ?? v.notes,
-                updatedAt: new Date().toISOString(),
-                reviewedBy: { id: mockUser.id, name: mockUser.fullName },
-              }
-            : v,
-        );
-        auditDb = [
-          {
-            id: `ad_${Date.now()}`,
-            admin: {
-              id: mockUser.id,
-              name: mockUser.fullName,
-              role: mockUser.adminRole ?? "super-admin",
-            },
-            action: `Verification ${arg.body.decision}`,
-            target: {
-              type: "verification",
-              id: arg.body.id,
-              label:
-                verificationsDb.find((v) => v.id === arg.body.id)?.subject
-                  .name ?? arg.body.id,
-            },
-            createdAt: new Date().toISOString(),
-          },
-          ...auditDb,
-        ];
-        return { data: verificationsDb.find((v) => v.id === arg.body.id)! };
-      }
-
-      /* ---------- USERS ---------- */
-
-      case "/admin/users": {
-        const { search, status, role } = arg.params ?? {};
-        const data = usersDb.filter((u) => {
-          if (status && status !== "all" && u.status !== status) return false;
-          if (role && role !== "all" && u.role !== role) return false;
-          if (search) {
-            const q = search.toLowerCase();
+      case "/admin/crew": {
+        const p = arg.params ?? {};
+        const q = (p.search ?? "").toLowerCase();
+        const data = crewDb.filter((c) => {
+          if (p.position && p.position !== "all" && c.position !== p.position)
+            return false;
+          if (p.status && p.status !== "all" && c.status !== p.status)
+            return false;
+          if (
+            p.availability &&
+            p.availability !== "all" &&
+            c.availability !== p.availability
+          )
+            return false;
+          if (
+            p.nationality &&
+            !c.nationality.toLowerCase().includes(p.nationality.toLowerCase())
+          )
+            return false;
+          if (p.certification) {
+            const needle = p.certification.toLowerCase();
+            const ok = c.certifications.some((x) =>
+              x.name.toLowerCase().includes(needle),
+            );
+            if (!ok) return false;
+          }
+          if (q) {
             return (
-              u.fullName.toLowerCase().includes(q) ||
-              u.email.toLowerCase().includes(q)
+              c.fullName.toLowerCase().includes(q) ||
+              c.email.toLowerCase().includes(q) ||
+              c.nationality.toLowerCase().includes(q)
             );
           }
           return true;
@@ -233,146 +232,209 @@ const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }
         return { data };
       }
 
-      case "/admin/users/byId": {
-        const found = usersDb.find((u) => u.id === arg.params.id);
-        if (!found) return { error: { message: "Not found" } };
+      case "/admin/crew/byId": {
+        const found = crewDb.find((c) => c.id === arg.params.id);
+        if (!found) return { error: { message: "Crew member not found" } };
         return { data: found };
       }
 
-      case "/admin/users/activity": {
-        return { data: activityDb[arg.params.id] ?? [] };
+      case "/admin/crew/verification": {
+        if (arg.method !== "PATCH") break;
+        crewDb = crewDb.map((c) =>
+          c.id === arg.body.id
+            ? {
+                ...c,
+                verificationStatus: arg.body.decision,
+                lastActiveAt: new Date().toISOString(),
+              }
+            : c,
+        );
+        recordAudit(`Crew verification → ${arg.body.decision}`, {
+          type: "crew",
+          id: arg.body.id,
+          label: crewDb.find((c) => c.id === arg.body.id)?.fullName ?? arg.body.id,
+        });
+        return { data: crewDb.find((c) => c.id === arg.body.id)! };
       }
 
-      case "/admin/users/status": {
+      case "/admin/crew/status": {
         if (arg.method !== "PATCH") break;
-        usersDb = usersDb.map((u) =>
-          u.id === arg.body.id ? { ...u, status: arg.body.status } : u,
+        crewDb = crewDb.map((c) =>
+          c.id === arg.body.id ? { ...c, status: arg.body.status } : c,
         );
-        auditDb = [
-          {
-            id: `ad_${Date.now()}`,
-            admin: {
-              id: mockUser.id,
-              name: mockUser.fullName,
-              role: mockUser.adminRole ?? "super-admin",
-            },
-            action: `Set status: ${arg.body.status}`,
-            target: {
-              type: "user",
-              id: arg.body.id,
-              label: usersDb.find((u) => u.id === arg.body.id)?.fullName ?? arg.body.id,
-            },
-            createdAt: new Date().toISOString(),
+        recordAudit(`Crew status → ${arg.body.status}`, {
+          type: "crew",
+          id: arg.body.id,
+          label: crewDb.find((c) => c.id === arg.body.id)?.fullName ?? arg.body.id,
+        });
+        return { data: crewDb.find((c) => c.id === arg.body.id)! };
+      }
+
+      /* ====================================================
+         OWNERS
+      ==================================================== */
+
+      case "/admin/owners": {
+        const p = arg.params ?? {};
+        const q = (p.search ?? "").toLowerCase();
+        const data = ownersDb.filter((o) => {
+          if (
+            p.verification &&
+            p.verification !== "all" &&
+            o.verificationStatus !== p.verification
+          )
+            return false;
+          if (p.status && p.status !== "all" && o.status !== p.status)
+            return false;
+          if (q) {
+            return (
+              o.fullName.toLowerCase().includes(q) ||
+              o.email.toLowerCase().includes(q) ||
+              (o.companyName ?? "").toLowerCase().includes(q) ||
+              o.country.toLowerCase().includes(q)
+            );
+          }
+          return true;
+        });
+        return { data };
+      }
+
+      case "/admin/owners/byId": {
+        const found = ownersDb.find((o) => o.id === arg.params.id);
+        if (!found) return { error: { message: "Owner not found" } };
+        return { data: found };
+      }
+
+      case "/admin/owners/verification": {
+        if (arg.method !== "PATCH") break;
+        ownersDb = ownersDb.map((o) =>
+          o.id === arg.body.id
+            ? {
+                ...o,
+                verificationStatus: arg.body.decision,
+                notes: arg.body.note ?? o.notes,
+              }
+            : o,
+        );
+        recordAudit(`Owner verification → ${arg.body.decision}`, {
+          type: "owner",
+          id: arg.body.id,
+          label: ownersDb.find((o) => o.id === arg.body.id)?.fullName ?? arg.body.id,
+        });
+        return { data: ownersDb.find((o) => o.id === arg.body.id)! };
+      }
+
+      case "/admin/owners/status": {
+        if (arg.method !== "PATCH") break;
+        ownersDb = ownersDb.map((o) =>
+          o.id === arg.body.id ? { ...o, status: arg.body.status } : o,
+        );
+        recordAudit(`Owner status → ${arg.body.status}`, {
+          type: "owner",
+          id: arg.body.id,
+          label: ownersDb.find((o) => o.id === arg.body.id)?.fullName ?? arg.body.id,
+        });
+        return { data: ownersDb.find((o) => o.id === arg.body.id)! };
+      }
+
+      /* ====================================================
+         JOBS  (delegated to mockJobs)
+      ==================================================== */
+
+      case "/admin/jobs": {
+        const q = (arg.params?.search ?? "").toLowerCase();
+        const status = arg.params?.status;
+        const data = mockJobs
+          .filter((j) => {
+            if (status && status !== "all" && j.status !== status) return false;
+            if (q) {
+              return (
+                j.title.toLowerCase().includes(q) ||
+                j.yacht.name.toLowerCase().includes(q) ||
+                j.location.toLowerCase().includes(q)
+              );
+            }
+            return true;
+          })
+          .map((j) => ({ ...j, stats: computeJobStats(j.id) }));
+        return { data };
+      }
+
+      case "/admin/jobs/byId": {
+        const found = mockJobs.find((j) => j.id === arg.params.id);
+        if (!found) return { error: { message: "Job not found" } };
+        const owner =
+          ownersDb.find((o) => o.id === "u_owner_1") ?? ownersDb[0];
+        const applications = applicationsDb.filter(
+          (a) => a.job.id === arg.params.id,
+        );
+        return {
+          data: {
+            job: found,
+            owner,
+            stats: computeJobStats(arg.params.id),
+            applications,
           },
-          ...auditDb,
-        ];
-        return { data: usersDb.find((u) => u.id === arg.body.id)! };
+        };
       }
 
-      case "/admin/users/verification": {
-        if (arg.method !== "DELETE") break;
-        usersDb = usersDb.map((u) =>
-          u.id === arg.body.id ? { ...u, verified: false } : u,
-        );
-        return { data: usersDb.find((u) => u.id === arg.body.id)! };
-      }
+      /* ====================================================
+         APPLICATIONS
+      ==================================================== */
 
-      /* ---------- REPORTED JOBS ---------- */
-
-      case "/admin/reported-jobs": {
-        const status = arg.params?.status;
-        const data =
-          !status || status === "all"
-            ? reportsDb
-            : reportsDb.filter((r) => r.status === status);
+      case "/admin/applications": {
+        const p = arg.params ?? {};
+        const q = (p.search ?? "").toLowerCase();
+        const data = applicationsDb.filter((a) => {
+          if (p.status && p.status !== "all" && a.status !== p.status)
+            return false;
+          if (p.jobId && a.job.id !== p.jobId) return false;
+          if (q) {
+            return (
+              a.candidate.fullName.toLowerCase().includes(q) ||
+              a.job.title.toLowerCase().includes(q) ||
+              a.job.yacht.toLowerCase().includes(q)
+            );
+          }
+          return true;
+        });
         return { data };
       }
 
-      case "/admin/reported-jobs/decide": {
-        if (arg.method !== "PATCH") break;
-        const nextStatus: ReportStatus =
-          arg.body.action === "remove" || arg.body.action === "suspend"
-            ? "resolved"
-            : arg.body.action === "dismiss"
-              ? "dismissed"
-              : "investigating";
-        reportsDb = reportsDb.map((r) =>
-          r.id === arg.body.id
-            ? {
-                ...r,
-                status: nextStatus,
-                updatedAt: new Date().toISOString(),
-              }
-            : r,
-        );
-        return { data: reportsDb.find((r) => r.id === arg.body.id)! };
-      }
-
-      /* ---------- FRAUD ---------- */
-
-      case "/admin/fraud-signals":
-        return { data: fraudDb };
-
-      case "/admin/fraud-signals/ack": {
-        if (arg.method !== "PATCH") break;
-        fraudDb = fraudDb.map((f) =>
-          f.id === arg.body.id ? { ...f, acknowledged: true } : f,
-        );
-        return { data: fraudDb.find((f) => f.id === arg.body.id)! };
-      }
-
-      /* ---------- DISPUTES ---------- */
-
-      case "/admin/disputes": {
-        const status = arg.params?.status;
-        const data =
-          !status || status === "all"
-            ? disputesDb
-            : disputesDb.filter((d) => d.status === status);
-        return { data };
-      }
-
-      case "/admin/disputes/byId": {
-        const found = disputesDb.find((d) => d.id === arg.params.id);
-        if (!found) return { error: { message: "Not found" } };
+      case "/admin/applications/byId": {
+        const found = applicationsDb.find((a) => a.id === arg.params.id);
+        if (!found) return { error: { message: "Application not found" } };
         return { data: found };
       }
 
-      case "/admin/disputes/status": {
+      case "/admin/applications/status": {
         if (arg.method !== "PATCH") break;
-        disputesDb = disputesDb.map((d) =>
-          d.id === arg.body.id
-            ? { ...d, status: arg.body.status, updatedAt: new Date().toISOString() }
-            : d,
-        );
-        return { data: disputesDb.find((d) => d.id === arg.body.id)! };
-      }
-
-      case "/admin/disputes/resolve": {
-        if (arg.method !== "PATCH") break;
-        disputesDb = disputesDb.map((d) =>
-          d.id === arg.body.id
+        applicationsDb = applicationsDb.map((a) =>
+          a.id === arg.body.id
             ? {
-                ...d,
-                status: "resolved" as DisputeStatus,
+                ...a,
+                status: arg.body.status,
                 updatedAt: new Date().toISOString(),
-                resolution: {
-                  decision: arg.body.decision,
-                  note: arg.body.note,
-                  by: { id: mockUser.id, name: mockUser.fullName },
-                  at: new Date().toISOString(),
-                },
               }
-            : d,
+            : a,
         );
-        return { data: disputesDb.find((d) => d.id === arg.body.id)! };
+        recordAudit(`Application status → ${arg.body.status}`, {
+          type: "application",
+          id: arg.body.id,
+          label:
+            applicationsDb.find((a) => a.id === arg.body.id)?.candidate.fullName ??
+            arg.body.id,
+        });
+        return { data: applicationsDb.find((a) => a.id === arg.body.id)! };
       }
 
-      /* ---------- ANNOUNCEMENTS ---------- */
+      /* ====================================================
+         ANNOUNCEMENTS
+      ==================================================== */
 
       case "/admin/announcements": {
         if ("method" in arg && arg.method === "POST") {
-          const now = new Date().toISOString();
+          const nowIso = new Date().toISOString();
           const item: Announcement = {
             id: `a_${Date.now()}`,
             title: arg.body.title,
@@ -381,13 +443,18 @@ const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }
             channels: arg.body.channels,
             status: arg.body.scheduledFor ? "scheduled" : "sent",
             scheduledFor: arg.body.scheduledFor,
-            sentAt: arg.body.scheduledFor ? undefined : now,
-            createdAt: now,
+            sentAt: arg.body.scheduledFor ? undefined : nowIso,
+            createdAt: nowIso,
             createdBy: { id: mockUser.id, name: mockUser.fullName },
             deliveredCount: arg.body.scheduledFor ? undefined : 4210,
             openRate: arg.body.scheduledFor ? undefined : 0.54,
           };
           announcementsDb = [item, ...announcementsDb];
+          recordAudit(`Sent announcement: ${item.title}`, {
+            type: "announcement",
+            id: item.id,
+            label: item.title,
+          });
           return { data: item };
         }
         return { data: announcementsDb };
@@ -399,12 +466,12 @@ const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }
         return { data: { id: arg.body.id } };
       }
 
-      /* ---------- ANALYTICS ---------- */
+      /* ====================================================
+         ANALYTICS + SECURITY
+      ==================================================== */
 
       case "/admin/analytics":
         return { data: mockAnalytics };
-
-      /* ---------- SECURITY ---------- */
 
       case "/admin/security/events":
         return { data: mockSecurityEvents };
@@ -418,10 +485,17 @@ const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }
       case "/admin/security/sessions/revoke": {
         if (arg.method !== "DELETE") break;
         sessionsDb = sessionsDb.filter((s) => s.id !== arg.body.id);
+        recordAudit("Revoked active session", {
+          type: "session",
+          id: arg.body.id,
+          label: arg.body.id,
+        });
         return { data: { id: arg.body.id } };
       }
 
-      /* ---------- GLOBAL SEARCH ---------- */
+      /* ====================================================
+         GLOBAL SEARCH
+      ==================================================== */
 
       case "/admin/search": {
         const q = arg.params.q.trim().toLowerCase();
@@ -429,18 +503,36 @@ const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }
 
         const results: SearchResult[] = [];
 
-        usersDb.forEach((u) => {
+        crewDb.forEach((c) => {
           if (
-            u.fullName.toLowerCase().includes(q) ||
-            u.email.toLowerCase().includes(q)
+            c.fullName.toLowerCase().includes(q) ||
+            c.email.toLowerCase().includes(q) ||
+            c.nationality.toLowerCase().includes(q)
           ) {
             results.push({
-              id: u.id,
-              kind: "user",
-              title: u.fullName,
-              subtitle: u.email,
-              href: `/admin/users/${u.id}`,
-              meta: u.role,
+              id: c.id,
+              kind: "crew",
+              title: c.fullName,
+              subtitle: c.email,
+              href: `/admin/crew/${c.id}`,
+              meta: c.position,
+            });
+          }
+        });
+
+        ownersDb.forEach((o) => {
+          if (
+            o.fullName.toLowerCase().includes(q) ||
+            o.email.toLowerCase().includes(q) ||
+            (o.companyName ?? "").toLowerCase().includes(q)
+          ) {
+            results.push({
+              id: o.id,
+              kind: "owner",
+              title: o.fullName,
+              subtitle: o.companyName ?? o.email,
+              href: `/admin/owners`,
+              meta: o.country,
             });
           }
         });
@@ -448,47 +540,32 @@ const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }
         mockJobs.forEach((j) => {
           if (
             j.title.toLowerCase().includes(q) ||
-            j.yacht.name.toLowerCase().includes(q)
+            j.yacht.name.toLowerCase().includes(q) ||
+            j.location.toLowerCase().includes(q)
           ) {
             results.push({
               id: j.id,
               kind: "job",
               title: j.title,
               subtitle: j.yacht.name,
-              href: `/jobs/${j.id}`,
+              href: `/admin/jobs/${j.id}`,
+              meta: j.location,
             });
           }
         });
 
-        reportsDb.forEach((r) => {
+        applicationsDb.forEach((a) => {
           if (
-            r.job.title.toLowerCase().includes(q) ||
-            r.description.toLowerCase().includes(q)
+            a.candidate.fullName.toLowerCase().includes(q) ||
+            a.job.title.toLowerCase().includes(q)
           ) {
             results.push({
-              id: r.id,
-              kind: "report",
-              title: r.job.title,
-              subtitle: r.reason,
-              href: "/admin/reported-jobs",
-              meta: r.severity,
-            });
-          }
-        });
-
-        disputesDb.forEach((d) => {
-          if (
-            d.reference.toLowerCase().includes(q) ||
-            d.summary.toLowerCase().includes(q) ||
-            (d.jobTitle ?? "").toLowerCase().includes(q)
-          ) {
-            results.push({
-              id: d.id,
-              kind: "dispute",
-              title: d.reference,
-              subtitle: d.summary.slice(0, 64),
-              href: `/admin/disputes`,
-              meta: d.status,
+              id: a.id,
+              kind: "application",
+              title: a.candidate.fullName,
+              subtitle: a.job.title,
+              href: `/admin/applications`,
+              meta: a.status,
             });
           }
         });
@@ -510,21 +587,33 @@ const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }
   return { error: { message: "Method not implemented for route" } };
 };
 
+/* ---------------- types passed to consumers ---------------- */
+
+export interface JobDetailsResponse {
+  job: (typeof mockJobs)[number];
+  owner: OwnerProfile;
+  stats: JobApplicationStats;
+  applications: ApplicationSummary[];
+}
+
+export type AdminJobRow = (typeof mockJobs)[number] & {
+  stats: JobApplicationStats;
+};
+
 /* ---------------- API ---------------- */
 
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: adminMockBaseQuery,
   tagTypes: [
-    "Verifications",
-    "Verification",
-    "AdminUsers",
-    "AdminUser",
-    "AdminUserActivity",
-    "Reports",
-    "Fraud",
-    "Disputes",
-    "Dispute",
+    "Crew",
+    "CrewProfile",
+    "Owners",
+    "OwnerProfile",
+    "Jobs",
+    "Job",
+    "Applications",
+    "Application",
     "Announcements",
     "Analytics",
     "Security",
@@ -533,154 +622,153 @@ export const adminApi = createApi({
     "Search",
   ] as const,
   endpoints: (b) => ({
-    /* --- VERIFICATIONS --- */
-    listVerifications: b.query<VerificationRequest[], VerificationStatus | "all" | void>({
-      query: (status) => ({
-        url: "/admin/verifications",
-        params: status ? { status } : undefined,
-      }),
-      providesTags: ["Verifications"],
+    /* --- CREW --- */
+    listCrew: b.query<
+      CrewProfile[],
+      {
+        search?: string;
+        position?: CrewPosition | "all";
+        nationality?: string;
+        certification?: string;
+        availability?: CrewAvailability | "all";
+        status?: AdminAccountStatus | "all";
+      } | void
+    >({
+      query: (params) => ({ url: "/admin/crew", params: params ?? undefined }),
+      providesTags: ["Crew"],
     }),
-    getVerification: b.query<VerificationRequest, string>({
-      query: (id) => ({ url: "/admin/verifications/byId", params: { id } }),
-      providesTags: (_r, _e, id) => [{ type: "Verification", id }],
+    getCrewProfile: b.query<CrewProfile, string>({
+      query: (id) => ({ url: "/admin/crew/byId", params: { id } }),
+      providesTags: (_r, _e, id) => [{ type: "CrewProfile", id }],
     }),
-    decideVerification: b.mutation<
-      VerificationRequest,
+    decideCrewVerification: b.mutation<
+      CrewProfile,
       { id: string; decision: VerificationStatus; note?: string }
     >({
       query: (body) => ({
-        url: "/admin/verifications/decide",
-        method: "PATCH",
-        body,
-      }),
-      invalidatesTags: ["Verifications", "Audit"],
-    }),
-
-    /* --- USERS --- */
-    listAdminUsers: b.query<
-      AdminUserSummary[],
-      {
-        search?: string;
-        status?: AdminAccountStatus | "all";
-        role?: "all" | "owner" | "captain" | "agent";
-      } | void
-    >({
-      query: (params) => ({ url: "/admin/users", params: params ?? undefined }),
-      providesTags: ["AdminUsers"],
-    }),
-    getAdminUser: b.query<AdminUserSummary, string>({
-      query: (id) => ({ url: "/admin/users/byId", params: { id } }),
-      providesTags: (_r, _e, id) => [{ type: "AdminUser", id }],
-    }),
-    getAdminUserActivity: b.query<ActivityLogEntry[], string>({
-      query: (id) => ({ url: "/admin/users/activity", params: { id } }),
-      providesTags: (_r, _e, id) => [{ type: "AdminUserActivity", id }],
-    }),
-    updateAdminUserStatus: b.mutation<
-      AdminUserSummary,
-      { id: string; status: AdminAccountStatus; reason?: string }
-    >({
-      query: (body) => ({
-        url: "/admin/users/status",
+        url: "/admin/crew/verification",
         method: "PATCH",
         body,
       }),
       invalidatesTags: (_r, _e, body) => [
-        "AdminUsers",
-        { type: "AdminUser", id: body.id },
+        "Crew",
+        { type: "CrewProfile", id: body.id },
         "Audit",
       ],
     }),
-    removeAdminUserVerification: b.mutation<AdminUserSummary, string>({
-      query: (id) => ({
-        url: "/admin/users/verification",
-        method: "DELETE",
-        body: { id },
-      }),
-      invalidatesTags: (_r, _e, id) => [
-        "AdminUsers",
-        { type: "AdminUser", id },
-      ],
-    }),
-
-    /* --- REPORTED JOBS --- */
-    listJobReports: b.query<JobReport[], ReportStatus | "all" | void>({
-      query: (status) => ({
-        url: "/admin/reported-jobs",
-        params: status ? { status } : undefined,
-      }),
-      providesTags: ["Reports"],
-    }),
-    decideJobReport: b.mutation<
-      JobReport,
-      {
-        id: string;
-        action: "remove" | "suspend" | "dismiss" | "warn";
-        note?: string;
-      }
+    updateCrewStatus: b.mutation<
+      CrewProfile,
+      { id: string; status: AdminAccountStatus; reason?: string }
     >({
       query: (body) => ({
-        url: "/admin/reported-jobs/decide",
-        method: "PATCH",
-        body,
-      }),
-      invalidatesTags: ["Reports"],
-    }),
-
-    /* --- FRAUD --- */
-    listFraudSignals: b.query<FraudSignal[], void>({
-      query: () => ({ url: "/admin/fraud-signals" }),
-      providesTags: ["Fraud"],
-    }),
-    acknowledgeFraudSignal: b.mutation<FraudSignal, string>({
-      query: (id) => ({
-        url: "/admin/fraud-signals/ack",
-        method: "PATCH",
-        body: { id },
-      }),
-      invalidatesTags: ["Fraud"],
-    }),
-
-    /* --- DISPUTES --- */
-    listDisputes: b.query<Dispute[], DisputeStatus | "all" | void>({
-      query: (status) => ({
-        url: "/admin/disputes",
-        params: status ? { status } : undefined,
-      }),
-      providesTags: ["Disputes"],
-    }),
-    getDispute: b.query<Dispute, string>({
-      query: (id) => ({ url: "/admin/disputes/byId", params: { id } }),
-      providesTags: (_r, _e, id) => [{ type: "Dispute", id }],
-    }),
-    setDisputeStatus: b.mutation<Dispute, { id: string; status: DisputeStatus }>({
-      query: (body) => ({
-        url: "/admin/disputes/status",
+        url: "/admin/crew/status",
         method: "PATCH",
         body,
       }),
       invalidatesTags: (_r, _e, body) => [
-        "Disputes",
-        { type: "Dispute", id: body.id },
+        "Crew",
+        { type: "CrewProfile", id: body.id },
+        "Audit",
       ],
     }),
-    resolveDispute: b.mutation<
-      Dispute,
+
+    /* --- OWNERS --- */
+    listOwners: b.query<
+      OwnerProfile[],
       {
-        id: string;
-        decision: "refund" | "partial-refund" | "no-action" | "warning" | "suspension";
-        note: string;
-      }
+        search?: string;
+        verification?: VerificationStatus | "all";
+        status?: AdminAccountStatus | "all";
+      } | void
+    >({
+      query: (params) => ({
+        url: "/admin/owners",
+        params: params ?? undefined,
+      }),
+      providesTags: ["Owners"],
+    }),
+    getOwnerProfile: b.query<OwnerProfile, string>({
+      query: (id) => ({ url: "/admin/owners/byId", params: { id } }),
+      providesTags: (_r, _e, id) => [{ type: "OwnerProfile", id }],
+    }),
+    decideOwnerVerification: b.mutation<
+      OwnerProfile,
+      { id: string; decision: VerificationStatus; note?: string }
     >({
       query: (body) => ({
-        url: "/admin/disputes/resolve",
+        url: "/admin/owners/verification",
         method: "PATCH",
         body,
       }),
       invalidatesTags: (_r, _e, body) => [
-        "Disputes",
-        { type: "Dispute", id: body.id },
+        "Owners",
+        { type: "OwnerProfile", id: body.id },
+        "Audit",
+      ],
+    }),
+    updateOwnerStatus: b.mutation<
+      OwnerProfile,
+      { id: string; status: AdminAccountStatus; reason?: string }
+    >({
+      query: (body) => ({
+        url: "/admin/owners/status",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: (_r, _e, body) => [
+        "Owners",
+        { type: "OwnerProfile", id: body.id },
+        "Audit",
+      ],
+    }),
+
+    /* --- JOBS --- */
+    listAdminJobs: b.query<
+      AdminJobRow[],
+      { search?: string; status?: string } | void
+    >({
+      query: (params) => ({
+        url: "/admin/jobs",
+        params: params ?? undefined,
+      }),
+      providesTags: ["Jobs"],
+    }),
+    getAdminJob: b.query<JobDetailsResponse, string>({
+      query: (id) => ({ url: "/admin/jobs/byId", params: { id } }),
+      providesTags: (_r, _e, id) => [{ type: "Job", id }],
+    }),
+
+    /* --- APPLICATIONS --- */
+    listApplications: b.query<
+      ApplicationSummary[],
+      {
+        search?: string;
+        status?: ApplicationStatus | "all";
+        jobId?: string;
+      } | void
+    >({
+      query: (params) => ({
+        url: "/admin/applications",
+        params: params ?? undefined,
+      }),
+      providesTags: ["Applications"],
+    }),
+    getApplication: b.query<ApplicationSummary, string>({
+      query: (id) => ({ url: "/admin/applications/byId", params: { id } }),
+      providesTags: (_r, _e, id) => [{ type: "Application", id }],
+    }),
+    setApplicationStatus: b.mutation<
+      ApplicationSummary,
+      { id: string; status: ApplicationStatus }
+    >({
+      query: (body) => ({
+        url: "/admin/applications/status",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: (_r, _e, body) => [
+        "Applications",
+        { type: "Application", id: body.id },
         "Audit",
       ],
     }),
@@ -753,22 +841,19 @@ export const adminApi = createApi({
 });
 
 export const {
-  useListVerificationsQuery,
-  useGetVerificationQuery,
-  useDecideVerificationMutation,
-  useListAdminUsersQuery,
-  useGetAdminUserQuery,
-  useGetAdminUserActivityQuery,
-  useUpdateAdminUserStatusMutation,
-  useRemoveAdminUserVerificationMutation,
-  useListJobReportsQuery,
-  useDecideJobReportMutation,
-  useListFraudSignalsQuery,
-  useAcknowledgeFraudSignalMutation,
-  useListDisputesQuery,
-  useGetDisputeQuery,
-  useSetDisputeStatusMutation,
-  useResolveDisputeMutation,
+  useListCrewQuery,
+  useGetCrewProfileQuery,
+  useDecideCrewVerificationMutation,
+  useUpdateCrewStatusMutation,
+  useListOwnersQuery,
+  useGetOwnerProfileQuery,
+  useDecideOwnerVerificationMutation,
+  useUpdateOwnerStatusMutation,
+  useListAdminJobsQuery,
+  useGetAdminJobQuery,
+  useListApplicationsQuery,
+  useGetApplicationQuery,
+  useSetApplicationStatusMutation,
   useListAnnouncementsQuery,
   useSendAnnouncementMutation,
   useDeleteAnnouncementMutation,
