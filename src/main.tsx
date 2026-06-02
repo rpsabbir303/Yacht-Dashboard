@@ -11,6 +11,8 @@ import App from "@app/App";
 import "antd/dist/reset.css";
 import "./index.css";
 
+document.title = "SEAV ADMIN DASHBOARD";
+
 /**
  * Minimal luxury theme.
  * - Single accent (teal) for actions & active states.

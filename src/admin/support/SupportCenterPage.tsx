@@ -2,7 +2,6 @@ import {
   CustomerServiceOutlined,
   EyeOutlined,
   MoreOutlined,
-  ReloadOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
 import { Button, Dropdown, Input, Select, message } from "antd";
@@ -11,6 +10,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { PageHeader } from "@components/common/PageHeader";
+import { AdminPageStack } from "@components/admin/AdminPageStack";
 import { DataTable } from "@components/admin/DataTable";
 import { StatusBadge } from "@components/admin/StatusBadge";
 import { EmptyState } from "@components/feedback/EmptyState";
@@ -90,7 +90,7 @@ export const SupportCenterPage = () => {
     [debouncedSearch, status, userRole, priority, category],
   );
 
-  const { data, isLoading, refetch, isFetching } =
+  const { data, isLoading } =
     useListSupportTicketsQuery(params);
   const tickets = data?.tickets ?? [];
   const summary = data?.summary ?? {
@@ -159,20 +159,11 @@ export const SupportCenterPage = () => {
   };
 
   return (
-    <div>
+    <AdminPageStack>
       <PageHeader
-        eyebrow="Operations"
+        section="OPERATIONS"
         title="Support Center"
-        subtitle="Manage customer support requests, resolve issues, and communicate with platform users."
-        actions={
-          <Button
-            icon={<ReloadOutlined />}
-            loading={isFetching}
-            onClick={() => refetch()}
-          >
-            Refresh
-          </Button>
-        }
+        description="Manage customer support requests, resolve issues, and communicate with platform users."
       />
 
       {/* Summary cards */}
@@ -427,7 +418,7 @@ export const SupportCenterPage = () => {
           />
         )}
       </div>
-    </div>
+    </AdminPageStack>
   );
 };
 

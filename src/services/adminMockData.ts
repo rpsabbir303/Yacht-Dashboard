@@ -841,9 +841,6 @@ export const mockAnalytics: AnalyticsSnapshot = {
   },
   jobs: {
     active: 412,
-    filled: 198,
-    expired: 67,
-    avgTimeToFillDays: 9.4,
   },
   applications: {
     total: 2104,

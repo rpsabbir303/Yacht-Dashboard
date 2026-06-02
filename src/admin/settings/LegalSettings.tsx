@@ -442,7 +442,7 @@ export const LegalSettings = () => {
   /* ================================================================ */
 
   return (
-    <div>
+    <>
       {/* ===================== Filter bar (top of page) ===================== */}
       <section
         className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-3 rounded-2xl border border-white/[0.08] bg-surface px-4 py-3"
@@ -534,7 +534,7 @@ export const LegalSettings = () => {
         onClose={handleClosePreview}
         onPublish={() => handlePublish(true)}
       />
-    </div>
+    </>
   );
 };
 

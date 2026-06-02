@@ -1,7 +1,6 @@
 import {
   AppstoreOutlined,
   EyeOutlined,
-  ReloadOutlined,
   SearchOutlined,
 } from "@ant-design/icons";
 import { Button, Input, Select, Tooltip } from "antd";
@@ -9,6 +8,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { PageHeader } from "@components/common/PageHeader";
+import { AdminPageStack } from "@components/admin/AdminPageStack";
 import { DataTable } from "@components/admin/DataTable";
 import { StatusBadge } from "@components/admin/StatusBadge";
 import { EmptyState } from "@components/feedback/EmptyState";
@@ -39,7 +39,7 @@ export const JobManagementPage = () => {
   const [status, setStatus] = useState<JobStatus | "all">("all");
   const debouncedSearch = useDebouncedValue(search, 200);
 
-  const { data: jobs = [], isLoading, refetch, isFetching } = useListAdminJobsQuery({
+  const { data: jobs = [], isLoading } = useListAdminJobsQuery({
     search: debouncedSearch || undefined,
     status: status === "all" ? undefined : status,
   });
@@ -68,20 +68,11 @@ export const JobManagementPage = () => {
   const hasFilters = !!debouncedSearch || status !== "all";
 
   return (
-    <div>
+    <AdminPageStack>
       <PageHeader
-        eyebrow="Operations"
+        section="OPERATIONS"
         title="Job Management"
-        subtitle="Monitor all live listings, hiring activity and applications across the platform."
-        actions={
-          <Button
-            icon={<ReloadOutlined />}
-            loading={isFetching}
-            onClick={() => refetch()}
-          >
-            Refresh
-          </Button>
-        }
+        description="Monitor all live listings, hiring activity and applications across the platform."
       />
 
       {/* Pipeline tiles */}
@@ -243,7 +234,7 @@ export const JobManagementPage = () => {
           />
         )}
       </div>
-    </div>
+    </AdminPageStack>
   );
 };
 

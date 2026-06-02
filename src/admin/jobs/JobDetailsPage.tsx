@@ -1,5 +1,4 @@
 import {
-  ArrowLeftOutlined,
   EnvironmentOutlined,
   EyeOutlined,
   GlobalOutlined,
@@ -12,6 +11,7 @@ import type { ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { PageHeader } from "@components/common/PageHeader";
+import { AdminPageStack } from "@components/admin/AdminPageStack";
 import { GlassPanel } from "@components/common/GlassPanel";
 import { DataTable } from "@components/admin/DataTable";
 import { StatusBadge } from "@components/admin/StatusBadge";
@@ -30,8 +30,12 @@ export const JobDetailsPage = () => {
   if (isLoading) return <PageLoader />;
   if (!data) {
     return (
-      <div>
-        <PageHeader eyebrow="Job" title="Job not found" />
+      <AdminPageStack>
+        <PageHeader
+          section="OPERATIONS"
+          back={{ label: "Job Management", to: "/admin/jobs" }}
+          title="Job not found"
+        />
         <div className="surface-card">
           <EmptyState
             title="We couldn't find this job"
@@ -39,28 +43,22 @@ export const JobDetailsPage = () => {
             action={<Link to="/admin/jobs">Back to Job Management</Link>}
           />
         </div>
-      </div>
+      </AdminPageStack>
     );
   }
 
   const { job, owner, stats, applications } = data;
 
   return (
-    <div>
+    <AdminPageStack>
       <PageHeader
-        eyebrow={
-          <Link
-            to="/admin/jobs"
-            className="inline-flex items-center gap-1.5 text-grey-400 hover:text-white"
-          >
-            <ArrowLeftOutlined /> Job Management
-          </Link>
-        }
+        section="OPERATIONS"
+        back={{ label: "Job Management", to: "/admin/jobs" }}
         title={job.title}
-        subtitle={`${job.yacht.name} · ${job.location} · posted ${formatDate(
+        description={`${job.yacht.name} · ${job.location} · posted ${formatDate(
           job.createdAt,
         )}`}
-        actions={<StatusBadge kind="job" value={job.status} variant="chip" />}
+        extra={<StatusBadge kind="job" value={job.status} variant="chip" />}
       />
 
       {/* ---- pipeline summary ---- */}
@@ -106,6 +104,7 @@ export const JobDetailsPage = () => {
               </div>
             ) : (
               <DataTable<ApplicationSummary>
+                framed={false}
                 dataSource={applications}
                 rowKey="id"
                 pagination={false}
@@ -309,7 +308,7 @@ export const JobDetailsPage = () => {
           </GlassPanel>
         </div>
       </div>
-    </div>
+    </AdminPageStack>
   );
 };
 

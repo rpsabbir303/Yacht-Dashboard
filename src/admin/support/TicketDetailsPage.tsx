@@ -10,6 +10,7 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import { GlassPanel } from "@components/common/GlassPanel";
 import { PageHeader } from "@components/common/PageHeader";
+import { AdminPageStack } from "@components/admin/AdminPageStack";
 import { StatusBadge } from "@components/admin/StatusBadge";
 import {
   useGetSupportTicketQuery,
@@ -90,30 +91,33 @@ export const TicketDetailsPage = () => {
 
   if (isLoading) {
     return (
-      <div>
+      <AdminPageStack>
         <Skeleton active paragraph={{ rows: 12 }} />
-      </div>
+      </AdminPageStack>
     );
   }
 
   if (isError || !ticket) {
     return (
+      <AdminPageStack>
       <div className="surface-card p-8 text-center">
         <p className="text-grey-400">Ticket not found.</p>
         <Button className="mt-4" onClick={() => navigate("/admin/support")}>
           Back to Support Center
         </Button>
       </div>
+      </AdminPageStack>
     );
   }
 
   return (
-    <div>
+    <AdminPageStack>
       <PageHeader
-        eyebrow="Support"
+        section="OPERATIONS"
+        back={{ label: "Support Center", to: "/admin/support" }}
         title={ticket.ticketNumber}
-        subtitle={ticket.subject}
-        actions={
+        description={ticket.subject}
+        extra={
           <Button
             icon={<ArrowLeftOutlined />}
             onClick={() => navigate("/admin/support")}
@@ -253,7 +257,7 @@ export const TicketDetailsPage = () => {
           </footer>
         </GlassPanel>
       </div>
-    </div>
+    </AdminPageStack>
   );
 };
 

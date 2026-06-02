@@ -1,5 +1,3 @@
-import { ReloadOutlined } from "@ant-design/icons";
-import { Button } from "antd";
 import {
   Area,
   AreaChart,
@@ -18,6 +16,7 @@ import {
 } from "recharts";
 
 import { PageHeader } from "@components/common/PageHeader";
+import { AdminPageStack } from "@components/admin/AdminPageStack";
 import { PageLoader } from "@components/feedback/PageLoader";
 import { useGetAnalyticsQuery, useListApplicationsQuery } from "@services/adminApi";
 
@@ -40,7 +39,7 @@ const tooltipStyle = {
 };
 
 export const AnalyticsPage = () => {
-  const { data, isLoading, isFetching, refetch } = useGetAnalyticsQuery();
+  const { data, isLoading } = useGetAnalyticsQuery();
   const { data: applications = [] } = useListApplicationsQuery();
 
   if (isLoading || !data) return <PageLoader />;
@@ -60,20 +59,11 @@ export const AnalyticsPage = () => {
   );
 
   return (
-    <div>
+    <AdminPageStack>
       <PageHeader
-        eyebrow="Admin"
+        section="INTELLIGENCE"
         title="Platform analytics"
-        subtitle="A high-level snapshot of users, jobs and applications across the platform."
-        actions={
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={() => refetch()}
-            loading={isFetching}
-          >
-            Refresh
-          </Button>
-        }
+        description="A high-level snapshot of users, jobs and applications across the platform."
       />
 
       {/* ---------------- Headline KPIs ---------------- */}
@@ -199,31 +189,6 @@ export const AnalyticsPage = () => {
             </div>
           </AnalyticsWidget>
         </div>
-      </div>
-
-      {/* ---------------- Jobs ---------------- */}
-      <div className="mt-10 space-y-3">
-        <div className="text-[10px] uppercase tracking-[0.2em] text-grey-500">
-          Jobs
-        </div>
-        <AnalyticsWidget title="Job pipeline" hint="Active · filled · expired">
-          <KpiRow
-            items={[
-              { label: "Active", value: data.jobs.active, tone: "teal" },
-              { label: "Filled", value: data.jobs.filled, tone: "white" },
-              { label: "Expired", value: data.jobs.expired, tone: "danger" },
-            ]}
-          />
-          <div className="mt-6 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
-            <div className="text-[10px] uppercase tracking-[0.18em] text-grey-500">
-              Average time to fill
-            </div>
-            <div className="mt-1 text-2xl font-bold tracking-tighter2 text-white">
-              {data.jobs.avgTimeToFillDays.toFixed(1)}
-              <span className="ml-1 text-sm text-grey-500">days</span>
-            </div>
-          </div>
-        </AnalyticsWidget>
       </div>
 
       {/* ---------------- Applications ---------------- */}
@@ -353,7 +318,7 @@ export const AnalyticsPage = () => {
           </AnalyticsWidget>
         </div>
       </div>
-    </div>
+    </AdminPageStack>
   );
 };
 

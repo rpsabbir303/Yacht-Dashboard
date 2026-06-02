@@ -12,12 +12,21 @@ export function DataTable<RecordType extends object = object>({
   pageSize = 10,
   className,
   bordered,
+  framed = true,
   ...rest
 }: TableProps<RecordType> & {
   pageSize?: number;
+  /** When false, skip the outer surface (e.g. table already inside GlassPanel). */
+  framed?: boolean;
 }) {
   return (
-    <div className={cn("admin-data-table", className)}>
+    <div
+      className={cn(
+        "admin-data-table",
+        framed && "surface-card overflow-hidden",
+        className,
+      )}
+    >
       <Table<RecordType>
         rowKey={rowKey as string}
         bordered={bordered}

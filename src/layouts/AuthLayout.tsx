@@ -46,7 +46,7 @@ export const AuthLayout = () => {
           >
             <div className="eyebrow">Platform operations</div>
             <h2 className="text-[42px] font-bold leading-[1.05] tracking-tighter2 text-white">
-              The admin console for the Meridian yacht hiring platform.
+              The admin console for the SEAV yacht crew platform.
             </h2>
             <p className="text-[14.5px] leading-relaxed text-grey-400">
               Crew, owners, jobs and applications — managed from a single quiet
@@ -55,7 +55,7 @@ export const AuthLayout = () => {
           </motion.div>
 
           <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.22em] text-grey-500">
-            <span>Meridian · Admin Console</span>
+            <span>SEAV ADMIN DASHBOARD</span>
             <span>v1.0</span>
           </div>
         </div>

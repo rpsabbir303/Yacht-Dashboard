@@ -64,18 +64,6 @@ body {
     background-color: #13192a;
   }
 
-  .glass-card-hover {
-    transition:
-      transform 250ms cubic-bezier(0.22, 1, 0.36, 1),
-      border-color 250ms ease,
-      background-color 250ms ease;
-  }
-  .glass-card-hover:hover {
-    transform: translateY(-1px);
-    border-color: rgba(34, 199, 184, 0.35);
-    background-color: #13192a;
-  }
-
   .surface-inset {
     background-color: #0b1320;
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -341,6 +329,157 @@ body {
 }
 .support-tickets-table .ant-table-tbody > tr:hover .ant-table-cell-fix-right {
   background: #13192a !important;
+}
+
+/* Standard admin page content grid */
+.admin-page-content {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  padding-top: 0;
+  padding-left: 16px;
+  padding-right: 16px;
+  padding-bottom: 32px;
+}
+@media (min-width: 640px) {
+  .admin-page-content {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+}
+
+/* Shared vertical rail — titles, cards, filters, tables start on one line */
+.admin-page-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Unified page header — info left, toolbar right */
+.admin-page-header {
+  width: 100%;
+  min-width: 0;
+  margin: 0 0 32px;
+  padding: 24px 0 0;
+}
+
+.admin-page-header__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px 20px;
+}
+
+.admin-page-header__menu {
+  height: 40px;
+  width: 40px;
+  flex-shrink: 0;
+  order: -1;
+}
+
+@media (min-width: 1024px) {
+  .admin-page-header__menu {
+    display: none;
+  }
+}
+
+.admin-page-header__info {
+  flex: 1 1 240px;
+  min-width: 0;
+}
+
+.admin-page-header__info .eyebrow {
+  display: block;
+  margin: 0 0 8px;
+  padding: 0;
+}
+
+.admin-page-header h1 {
+  margin: 0;
+  padding: 0;
+}
+
+.admin-page-header__description {
+  margin: 8px 0 0;
+  padding: 0;
+  max-width: 42rem;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #94a3b8;
+}
+
+.admin-page-header__toolbar {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px 16px;
+  flex: 0 1 auto;
+}
+
+@media (max-width: 1023px) {
+  .admin-page-header__toolbar {
+    flex: 1 1 100%;
+    justify-content: flex-start;
+  }
+}
+
+.admin-page-header__time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.admin-page-header__role {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 9999px;
+  background: rgba(212, 178, 95, 0.06);
+  padding: 4px 10px;
+  font-size: 10.5px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: #d4b25f;
+  box-shadow: inset 0 0 0 1px rgba(212, 178, 95, 0.15);
+  white-space: nowrap;
+}
+
+.admin-page-header__extra {
+  margin-top: 16px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Tables use the same surface edge as KPI / filter cards */
+.admin-data-table.surface-card .ant-table-wrapper {
+  margin: 0;
+}
+
+.admin-data-table.surface-card .ant-table {
+  border-radius: 0;
+}
+
+/* Admin Overview — full-width activity table */
+.admin-activity-table .ant-table {
+  table-layout: fixed !important;
+}
+.admin-activity-table .ant-table-thead > tr > th,
+.admin-activity-table .ant-table-tbody > tr > td {
+  padding: 14px 20px !important;
+}
+.admin-activity-table .ant-table-cell {
+  overflow: hidden;
 }
 
 /* Modal + Drawer */

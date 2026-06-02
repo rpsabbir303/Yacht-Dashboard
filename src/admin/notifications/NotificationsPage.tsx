@@ -12,6 +12,7 @@ import { Button, Segmented, Tooltip, message } from "antd";
 import { useMemo, useState } from "react";
 
 import { PageHeader } from "@components/common/PageHeader";
+import { AdminPageStack } from "@components/admin/AdminPageStack";
 import { GlassPanel } from "@components/common/GlassPanel";
 import { EmptyState } from "@components/feedback/EmptyState";
 import { CardSkeleton } from "@components/feedback/LoadingSkeleton";
@@ -90,12 +91,12 @@ export const NotificationsPage = () => {
   };
 
   return (
-    <div>
+    <AdminPageStack>
       <PageHeader
-        eyebrow="Admin"
+        section="ADMIN"
         title="Notifications & announcements"
-        subtitle="Send platform-wide messages by role and channel. Schedule in advance or send immediately."
-        actions={
+        description="Send platform-wide messages by role and channel. Schedule in advance or send immediately."
+        extra={
           <Button
             type="primary"
             icon={<PlusOutlined />}
@@ -148,7 +149,7 @@ export const NotificationsPage = () => {
       )}
 
       <SendNotificationModal open={open} onClose={() => setOpen(false)} />
-    </div>
+    </AdminPageStack>
   );
 };
 

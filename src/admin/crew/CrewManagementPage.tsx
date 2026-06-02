@@ -3,7 +3,6 @@ import {
   CloseCircleOutlined,
   EyeOutlined,
   MoreOutlined,
-  ReloadOutlined,
   SafetyCertificateOutlined,
   SearchOutlined,
   StopOutlined,
@@ -23,6 +22,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { PageHeader } from "@components/common/PageHeader";
+import { AdminPageStack } from "@components/admin/AdminPageStack";
 import { DataTable } from "@components/admin/DataTable";
 import { StatusBadge } from "@components/admin/StatusBadge";
 import { EmptyState } from "@components/feedback/EmptyState";
@@ -94,7 +94,7 @@ export const CrewManagementPage = () => {
     ],
   );
 
-  const { data: crew = [], isLoading, refetch, isFetching } = useListCrewQuery(
+  const { data: crew = [], isLoading } = useListCrewQuery(
     params,
   );
   const [decide] = useDecideCrewVerificationMutation();
@@ -174,20 +174,11 @@ export const CrewManagementPage = () => {
   };
 
   return (
-    <div>
+    <AdminPageStack>
       <PageHeader
-        eyebrow="Operations"
+        section="OPERATIONS"
         title="Crew Management"
-        subtitle="Review crew profiles, verify documents and manage account standing."
-        actions={
-          <Button
-            icon={<ReloadOutlined />}
-            loading={isFetching}
-            onClick={() => refetch()}
-          >
-            Refresh
-          </Button>
-        }
+        description="Review crew profiles, verify documents and manage account standing."
       />
 
       {/* Summary tiles */}
@@ -437,7 +428,7 @@ export const CrewManagementPage = () => {
           />
         )}
       </div>
-    </div>
+    </AdminPageStack>
   );
 };
 

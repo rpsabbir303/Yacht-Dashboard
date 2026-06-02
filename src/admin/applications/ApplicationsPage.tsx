@@ -3,7 +3,6 @@ import {
   CloseCircleOutlined,
   EyeOutlined,
   MoreOutlined,
-  ReloadOutlined,
   SearchOutlined,
   SolutionOutlined,
 } from "@ant-design/icons";
@@ -20,6 +19,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Link } from "react-router-dom";
 
 import { PageHeader } from "@components/common/PageHeader";
+import { AdminPageStack } from "@components/admin/AdminPageStack";
 import { GlassPanel } from "@components/common/GlassPanel";
 import { DataTable } from "@components/admin/DataTable";
 import { StatusBadge } from "@components/admin/StatusBadge";
@@ -48,7 +48,7 @@ export const ApplicationsPage = () => {
   const [status, setStatus] = useState<ApplicationStatus | "all">("all");
   const debouncedSearch = useDebouncedValue(search, 200);
 
-  const { data: apps = [], isLoading, refetch, isFetching } =
+  const { data: apps = [], isLoading } =
     useListApplicationsQuery({
       search: debouncedSearch || undefined,
       status,
@@ -90,20 +90,11 @@ export const ApplicationsPage = () => {
   const hasFilters = !!debouncedSearch || status !== "all";
 
   return (
-    <div>
+    <AdminPageStack>
       <PageHeader
-        eyebrow="Operations"
+        section="OPERATIONS"
         title="Application Management"
-        subtitle="Monitor every application across the platform and track the full hiring pipeline."
-        actions={
-          <Button
-            icon={<ReloadOutlined />}
-            loading={isFetching}
-            onClick={() => refetch()}
-          >
-            Refresh
-          </Button>
-        }
+        description="Monitor every application across the platform and track the full hiring pipeline."
       />
 
       {/* Pipeline tiles */}
@@ -464,7 +455,7 @@ export const ApplicationsPage = () => {
           </div>
         )}
       </Drawer>
-    </div>
+    </AdminPageStack>
   );
 };
 

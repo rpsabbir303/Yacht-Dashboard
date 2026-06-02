@@ -1,4 +1,4 @@
-# Helm — Yacht Crew Hiring Dashboard
+# SEAV ADMIN DASHBOARD
 
 A production-ready frontend for a luxury superyacht crew hiring platform.
 Built for **Owners**, **Captains** and **Agents** to post jobs, discover crew,

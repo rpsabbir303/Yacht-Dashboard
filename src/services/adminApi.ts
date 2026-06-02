@@ -35,8 +35,6 @@ import type {
   CrewProfile,
   JobApplicationStats,
   OwnerProfile,
-  SearchResponse,
-  SearchResult,
   SupportTicket,
   SupportTicketCategory,
   SupportTicketListParams,
@@ -462,86 +460,6 @@ const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }
         return { data: mockAnalytics };
 
       /* ====================================================
-         GLOBAL SEARCH
-      ==================================================== */
-
-      case "/admin/search": {
-        const q = arg.params.q.trim().toLowerCase();
-        if (!q) return { data: { results: [] } as SearchResponse };
-
-        const results: SearchResult[] = [];
-
-        crewDb.forEach((c) => {
-          if (
-            c.fullName.toLowerCase().includes(q) ||
-            c.email.toLowerCase().includes(q) ||
-            c.nationality.toLowerCase().includes(q)
-          ) {
-            results.push({
-              id: c.id,
-              kind: "crew",
-              title: c.fullName,
-              subtitle: c.email,
-              href: `/admin/crew/${c.id}`,
-              meta: c.position,
-            });
-          }
-        });
-
-        ownersDb.forEach((o) => {
-          if (
-            o.fullName.toLowerCase().includes(q) ||
-            o.email.toLowerCase().includes(q) ||
-            (o.companyName ?? "").toLowerCase().includes(q)
-          ) {
-            results.push({
-              id: o.id,
-              kind: "owner",
-              title: o.fullName,
-              subtitle: o.companyName ?? o.email,
-              href: `/admin/owners`,
-              meta: o.country,
-            });
-          }
-        });
-
-        mockJobs.forEach((j) => {
-          if (
-            j.title.toLowerCase().includes(q) ||
-            j.yacht.name.toLowerCase().includes(q) ||
-            j.location.toLowerCase().includes(q)
-          ) {
-            results.push({
-              id: j.id,
-              kind: "job",
-              title: j.title,
-              subtitle: j.yacht.name,
-              href: `/admin/jobs/${j.id}`,
-              meta: j.location,
-            });
-          }
-        });
-
-        applicationsDb.forEach((a) => {
-          if (
-            a.candidate.fullName.toLowerCase().includes(q) ||
-            a.job.title.toLowerCase().includes(q)
-          ) {
-            results.push({
-              id: a.id,
-              kind: "application",
-              title: a.candidate.fullName,
-              subtitle: a.job.title,
-              href: `/admin/applications`,
-              meta: a.status,
-            });
-          }
-        });
-
-        return { data: { results: results.slice(0, 20) } as SearchResponse };
-      }
-
-      /* ====================================================
          SUPPORT  →  GET /support/tickets
       ==================================================== */
 
@@ -644,7 +562,6 @@ export const adminApi = createApi({
     "Application",
     "Announcements",
     "Analytics",
-    "Search",
     "Support",
     "SupportTicket",
   ] as const,
@@ -832,12 +749,6 @@ export const adminApi = createApi({
       providesTags: ["Analytics"],
     }),
 
-    /* --- GLOBAL SEARCH --- */
-    globalSearch: b.query<SearchResponse, string>({
-      query: (q) => ({ url: "/admin/search", params: { q } }),
-      providesTags: ["Search"],
-    }),
-
     /* --- SUPPORT  (production: /support/tickets, /support/tickets/:id, …) --- */
     listSupportTickets: b.query<SupportTicketListResponse, SupportTicketListParams | void>({
       query: (params) => ({
@@ -899,8 +810,6 @@ export const {
   useSendAnnouncementMutation,
   useDeleteAnnouncementMutation,
   useGetAnalyticsQuery,
-  useGlobalSearchQuery,
-  useLazyGlobalSearchQuery,
   useListSupportTicketsQuery,
   useGetSupportTicketQuery,
   useUpdateSupportTicketStatusMutation,

@@ -34,7 +34,7 @@ export const PageTransition = ({ children }: { children: ReactNode }) => {
           y: { duration: 0.22, ease: EASE },
           exit: { duration: 0.12 },
         }}
-        className="min-h-full"
+        className="min-h-full w-full min-w-0"
       >
         {children}
       </motion.div>

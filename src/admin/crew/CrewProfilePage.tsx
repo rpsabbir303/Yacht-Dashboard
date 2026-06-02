@@ -1,5 +1,4 @@
 import {
-  ArrowLeftOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   EnvironmentOutlined,
@@ -17,6 +16,7 @@ import { useState, type ReactNode } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { PageHeader } from "@components/common/PageHeader";
+import { AdminPageStack } from "@components/admin/AdminPageStack";
 import { GlassPanel } from "@components/common/GlassPanel";
 import { PageLoader } from "@components/feedback/PageLoader";
 import { EmptyState } from "@components/feedback/EmptyState";
@@ -46,8 +46,12 @@ export const CrewProfilePage = () => {
   if (isLoading) return <PageLoader />;
   if (!crew) {
     return (
-      <div>
-        <PageHeader eyebrow="Crew" title="Crew member not found" />
+      <AdminPageStack>
+        <PageHeader
+          section="OPERATIONS"
+          back={{ label: "Crew Management", to: "/admin/crew" }}
+          title="Crew member not found"
+        />
         <div className="surface-card">
           <EmptyState
             title="We couldn't find this profile"
@@ -55,7 +59,7 @@ export const CrewProfilePage = () => {
             action={<Link to="/admin/crew">Back to Crew Management</Link>}
           />
         </div>
-      </div>
+      </AdminPageStack>
     );
   }
 
@@ -109,21 +113,15 @@ export const CrewProfilePage = () => {
   };
 
   return (
-    <div>
+    <AdminPageStack>
       <PageHeader
-        eyebrow={
-          <Link
-            to="/admin/crew"
-            className="inline-flex items-center gap-1.5 text-grey-400 hover:text-white"
-          >
-            <ArrowLeftOutlined /> Crew Management
-          </Link>
-        }
+        section="OPERATIONS"
+        back={{ label: "Crew Management", to: "/admin/crew" }}
         title={crew.fullName}
-        subtitle={`${titleCase(crew.position)} · ${crew.nationality} · joined ${formatDate(
+        description={`${titleCase(crew.position)} · ${crew.nationality} · joined ${formatDate(
           crew.joinedAt,
         )}`}
-        actions={
+        extra={
           <div className="flex flex-wrap items-center gap-2">
             <Button
               icon={<CheckCircleOutlined />}
@@ -482,7 +480,7 @@ export const CrewProfilePage = () => {
           </div>
         )}
       </Modal>
-    </div>
+    </AdminPageStack>
   );
 };
 

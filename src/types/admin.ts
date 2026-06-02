@@ -316,9 +316,6 @@ export interface AnalyticsSnapshot {
   };
   jobs: {
     active: number;
-    filled: number;
-    expired: number;
-    avgTimeToFillDays: number;
   };
   applications: {
     total: number;
@@ -329,25 +326,6 @@ export interface AnalyticsSnapshot {
   engagement: {
     dailyActivity: { d: string; sessions: number; applications: number }[];
   };
-}
-
-/* ===========================================================
-   Global search
-=========================================================== */
-
-export type SearchResultKind = "crew" | "owner" | "job" | "application";
-
-export interface SearchResult {
-  id: ID;
-  kind: SearchResultKind;
-  title: string;
-  subtitle?: string;
-  href: string;
-  meta?: string;
-}
-
-export interface SearchResponse {
-  results: SearchResult[];
 }
 
 /* ===========================================================

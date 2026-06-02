@@ -3,7 +3,6 @@ import {
   CloseCircleOutlined,
   EyeOutlined,
   MoreOutlined,
-  ReloadOutlined,
   SafetyCertificateOutlined,
   SearchOutlined,
   StopOutlined,
@@ -12,6 +11,7 @@ import { Avatar, Button, Dropdown, Input, Select, Tooltip, message } from "antd"
 import { useMemo, useState } from "react";
 
 import { PageHeader } from "@components/common/PageHeader";
+import { AdminPageStack } from "@components/admin/AdminPageStack";
 import { DataTable } from "@components/admin/DataTable";
 import { StatusBadge } from "@components/admin/StatusBadge";
 import { EmptyState } from "@components/feedback/EmptyState";
@@ -49,7 +49,7 @@ export const OwnerVerificationPage = () => {
   );
   const debouncedSearch = useDebouncedValue(search, 200);
 
-  const { data: owners = [], isLoading, refetch, isFetching } = useListOwnersQuery({
+  const { data: owners = [], isLoading } = useListOwnersQuery({
     search: debouncedSearch || undefined,
     verification,
   });
@@ -131,20 +131,11 @@ export const OwnerVerificationPage = () => {
   };
 
   return (
-    <div>
+    <AdminPageStack>
       <PageHeader
-        eyebrow="Operations"
+        section="OPERATIONS"
         title="Owner Verification"
-        subtitle="Review vessel owner documents and decide on platform access."
-        actions={
-          <Button
-            icon={<ReloadOutlined />}
-            loading={isFetching}
-            onClick={() => refetch()}
-          >
-            Refresh
-          </Button>
-        }
+        description="Review vessel owner documents and decide on platform access."
       />
 
       {/* Summary tiles */}
@@ -385,7 +376,7 @@ export const OwnerVerificationPage = () => {
         open={!!drawerOwner}
         onClose={() => setDrawerId(null)}
       />
-    </div>
+    </AdminPageStack>
   );
 };
 
