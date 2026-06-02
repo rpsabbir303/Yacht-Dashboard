@@ -184,7 +184,7 @@ export const ApplicationsPage = () => {
                     <Avatar
                       src={row.candidate.avatarUrl}
                       size={32}
-                      className="!bg-white/[0.04] !text-grey-400"
+                      className="!bg-white/[0.05] !text-grey-400"
                     >
                       {initials(row.candidate.fullName)}
                     </Avatar>
@@ -279,7 +279,7 @@ export const ApplicationsPage = () => {
                   >
                     <button
                       onClick={() => setPreviewId(row.id)}
-                      className="grid h-7 w-7 place-items-center rounded-lg text-grey-400 transition hover:bg-white/[0.04] hover:text-white"
+                      className="icon-btn icon-btn-sm h-7 w-7"
                       aria-label="View"
                     >
                       <EyeOutlined />
@@ -324,7 +324,7 @@ export const ApplicationsPage = () => {
                       placement="bottomRight"
                     >
                       <button
-                        className="grid h-7 w-7 place-items-center rounded-lg text-grey-400 transition hover:bg-white/[0.04] hover:text-white"
+                        className="icon-btn icon-btn-sm h-7 w-7"
                         aria-label="More"
                       >
                         <MoreOutlined />
@@ -351,12 +351,12 @@ export const ApplicationsPage = () => {
       >
         {previewApp && (
           <div>
-            <div className="border-b border-white/[0.05] px-6 py-5">
+            <div className="border-b border-white/[0.08] px-6 py-5">
               <div className="flex items-start gap-4">
                 <Avatar
                   src={previewApp.candidate.avatarUrl}
                   size={52}
-                  className="!bg-white/[0.04] !text-grey-300"
+                  className="!bg-white/[0.05] !text-grey-300"
                 >
                   {initials(previewApp.candidate.fullName)}
                 </Avatar>
@@ -387,7 +387,7 @@ export const ApplicationsPage = () => {
 
             <div className="space-y-5 px-6 py-5">
               <Section title="Applied to">
-                <div className="rounded-xl border border-white/[0.05] bg-white/[0.015] px-3 py-2.5">
+                <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5">
                   <Link
                     to={`/admin/jobs/${previewApp.job.id}`}
                     className="text-[13px] font-medium text-white hover:text-teal-300"
@@ -405,7 +405,7 @@ export const ApplicationsPage = () => {
 
               {previewApp.coverLetter && (
                 <Section title="Cover letter">
-                  <p className="rounded-xl border border-white/[0.05] bg-white/[0.015] px-3 py-2.5 text-[13px] leading-relaxed text-grey-200">
+                  <p className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-[13px] leading-relaxed text-grey-300">
                     {previewApp.coverLetter}
                   </p>
                 </Section>
@@ -509,7 +509,7 @@ const PipelineTile = ({
     </div>
     <div
       className={cn(
-        "mt-1 text-xl font-semibold tracking-tighter2",
+        "mt-1 text-xl font-bold tracking-tighter2",
         tone === "teal" && "text-teal-300",
         tone === "gold" && "text-gold-400",
         tone === "danger" && "text-[#C24545]",

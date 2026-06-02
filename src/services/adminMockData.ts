@@ -2,20 +2,15 @@
  * In-memory fixtures for the admin module.
  *
  * Scoped to what the admin actually needs to run the platform — crew,
- * vessel owners, jobs, applications, security, analytics and announcements.
- * Anything related to reports / fraud / disputes / moderation has been
- * removed: those systems don't exist on the platform yet.
+ * vessel owners, jobs, applications, analytics and announcements.
  */
 import { mockJobs } from "./mockData";
 import type {
-  ActiveSession,
-  AdminAuditEntry,
   AnalyticsSnapshot,
   Announcement,
   ApplicationSummary,
   CrewProfile,
   OwnerProfile,
-  SecurityEvent,
 } from "@/types";
 
 const now = new Date();
@@ -869,152 +864,3 @@ export const mockAnalytics: AnalyticsSnapshot = {
   },
 };
 
-/* ----------------------------------------------------------------------
-   SECURITY
----------------------------------------------------------------------- */
-
-export const mockSecurityEvents: SecurityEvent[] = [
-  {
-    id: "se_1",
-    kind: "login-failed",
-    user: {
-      id: "u_susp_1",
-      name: "Karim Wallach",
-      email: "kw@blueocean-charters.com",
-    },
-    ip: "5.62.144.18",
-    device: "Chrome / Windows",
-    country: "Lebanon",
-    risk: "high",
-    createdAt: iso(0, -1),
-  },
-  {
-    id: "se_2",
-    kind: "suspicious-login",
-    user: {
-      id: "crew_2",
-      name: "James O'Connor",
-      email: "james.o@yachtmail.io",
-    },
-    ip: "104.28.4.21",
-    device: "Safari / iOS",
-    country: "Russia",
-    risk: "high",
-    createdAt: iso(0, -3),
-  },
-  {
-    id: "se_3",
-    kind: "login-success",
-    user: {
-      id: "u_owner_1",
-      name: "Alex Marlowe",
-      email: "alex@meridian-yachts.com",
-    },
-    ip: "82.65.220.18",
-    device: "Chrome / macOS",
-    country: "France",
-    risk: "low",
-    createdAt: iso(-1),
-  },
-  {
-    id: "se_4",
-    kind: "password-reset",
-    user: {
-      id: "crew_1",
-      name: "Sophia Laurent",
-      email: "sophia.l@yachtmail.io",
-    },
-    ip: "188.122.42.18",
-    device: "Firefox / Windows",
-    country: "France",
-    risk: "low",
-    createdAt: iso(-2),
-  },
-  {
-    id: "se_5",
-    kind: "mfa-enabled",
-    user: {
-      id: "u_owner_3",
-      name: "Henrik Lindqvist",
-      email: "henrik@lindqvist-yachting.se",
-    },
-    ip: "212.85.10.18",
-    device: "Chrome / Windows",
-    country: "Sweden",
-    risk: "low",
-    createdAt: iso(-3),
-  },
-];
-
-export const mockAuditTrail: AdminAuditEntry[] = [
-  {
-    id: "au_1",
-    admin: { id: "u_owner_1", name: "Alex Marlowe", role: "super-admin" },
-    action: "Approved crew verification",
-    target: { type: "crew", id: "crew_1", label: "Sophia Laurent" },
-    createdAt: iso(0, -2),
-  },
-  {
-    id: "au_2",
-    admin: { id: "u_owner_1", name: "Alex Marlowe", role: "super-admin" },
-    action: "Approved owner verification",
-    target: { type: "owner", id: "u_owner_3", label: "Henrik Lindqvist" },
-    createdAt: iso(-1, -3),
-  },
-  {
-    id: "au_3",
-    admin: { id: "u_owner_1", name: "Alex Marlowe", role: "super-admin" },
-    action: "Requested additional info",
-    target: { type: "owner", id: "u_owner_4", label: "Karim Wallach" },
-    createdAt: iso(-2),
-  },
-  {
-    id: "au_4",
-    admin: { id: "u_owner_1", name: "Alex Marlowe", role: "super-admin" },
-    action: "Suspended crew account",
-    target: { type: "crew", id: "crew_6", label: "Mateo Ríos" },
-    createdAt: iso(-3),
-  },
-];
-
-export const mockActiveSessions: ActiveSession[] = [
-  {
-    id: "ses_1",
-    user: {
-      id: "u_owner_1",
-      name: "Alex Marlowe",
-      email: "alex@meridian-yachts.com",
-    },
-    ip: "82.65.220.18",
-    device: "Chrome / macOS",
-    country: "France",
-    startedAt: iso(0, -2),
-    lastSeenAt: iso(0, -1),
-  },
-  {
-    id: "ses_2",
-    user: {
-      id: "u_owner_3",
-      name: "Henrik Lindqvist",
-      email: "henrik@lindqvist-yachting.se",
-    },
-    ip: "212.85.10.18",
-    device: "Chrome / Windows",
-    country: "Sweden",
-    startedAt: iso(-1),
-    lastSeenAt: iso(0, -4),
-  },
-  {
-    id: "ses_3",
-    user: {
-      id: "moderator_1",
-      name: "Sara Khan",
-      email: "sara.k@meridian-yachts.com",
-    },
-    ip: "82.66.18.214",
-    device: "Edge / Windows",
-    country: "France",
-    startedAt: iso(0, -1),
-    lastSeenAt: iso(0, 0),
-  },
-];

@@ -116,8 +116,8 @@ export const OtpInput = ({
             onFocus={(e) => e.currentTarget.select()}
             aria-label={`Digit ${idx + 1}`}
             className={cn(
-              "h-14 w-12 rounded-xl border border-white/[0.06] bg-white/[0.02] text-center text-[22px] font-semibold tracking-tight text-white outline-none transition",
-              "focus:border-teal-500/60 focus:bg-white/[0.04] focus:ring-2 focus:ring-teal-500/20",
+              "h-14 w-12 rounded-xl border border-white/[0.08] bg-white/[0.03] text-center text-[22px] font-semibold tracking-tight text-white outline-none transition",
+              "focus:border-teal-500/60 focus:bg-white/[0.05] focus:ring-2 focus:ring-teal-500/20",
               "sm:h-[60px] sm:w-[54px] sm:text-[24px]",
               invalid &&
                 "border-[#AA2727]/60 ring-2 ring-[#AA2727]/15 focus:ring-[#AA2727]/20",

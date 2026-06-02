@@ -21,7 +21,7 @@ export const EmptyState = ({
 }: Props) => (
   <div className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
     {icon && (
-      <div className="grid h-12 w-12 place-items-center rounded-2xl border border-white/[0.05] bg-white/[0.02] text-[18px] text-grey-400">
+      <div className="grid h-12 w-12 place-items-center rounded-2xl border border-white/[0.08] bg-white/[0.03] text-[18px] text-grey-500">
         {icon}
       </div>
     )}

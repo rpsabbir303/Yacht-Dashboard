@@ -8,7 +8,7 @@ interface Props {
 }
 
 const TIER_TONE: Record<string, { bar: string; text: string }> = {
-  empty: { bar: "bg-white/[0.06]", text: "text-grey-500" },
+  empty: { bar: "bg-white/[0.08]", text: "text-grey-500" },
   weak: { bar: "bg-[#AA2727]", text: "text-[#C24545]" },
   fair: { bar: "bg-gold-500", text: "text-gold-400" },
   good: { bar: "bg-teal-500/70", text: "text-teal-300" },
@@ -45,7 +45,7 @@ export const PasswordStrength = ({ value }: Props) => {
               key={i}
               className={cn(
                 "h-1.5 flex-1 rounded-full transition-colors",
-                i < filled ? tone.bar : "bg-white/[0.05]",
+                i < filled ? tone.bar : "bg-white/[0.08]",
               )}
             />
           ))}
@@ -76,7 +76,7 @@ export const PasswordStrength = ({ value }: Props) => {
                   "grid h-4 w-4 place-items-center rounded-full border text-[9px]",
                   ok
                     ? "border-teal-500/40 bg-teal-500/15 text-teal-300"
-                    : "border-white/[0.08] bg-white/[0.02] text-grey-500",
+                    : "border-white/[0.08] bg-white/[0.03] text-grey-500",
                 )}
                 aria-hidden
               >

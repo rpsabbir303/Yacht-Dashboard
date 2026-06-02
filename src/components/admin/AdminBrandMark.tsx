@@ -37,7 +37,7 @@ export const AdminBrandMark = ({ collapsed, className }: Props) => (
       />
       <path
         d="M6 14l4-8 1.5 4 1.5-3 3 7"
-        stroke="#14B8A6"
+        stroke="#22C7B8"
         strokeWidth="1.4"
         strokeLinecap="round"
         strokeLinejoin="round"

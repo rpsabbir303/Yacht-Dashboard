@@ -11,9 +11,8 @@ export type AdminRole = "super-admin" | "moderator" | "support-agent";
 /**
  * Practical, yacht-hiring-focused permission union.
  *
- * Anything moderation-, report- or dispute-shaped has been removed in favour
- * of the operational surfaces the admin actually needs: crew, owners, jobs,
- * applications, analytics, security, announcements and platform settings.
+ * Scoped to crew, owners, jobs, applications, analytics, announcements and
+ * platform settings.
  */
 export type Permission =
   | "crew.read"
@@ -28,8 +27,9 @@ export type Permission =
   | "applications.write"
   | "announcements.send"
   | "analytics.read"
-  | "security.read"
-  | "settings.write";
+  | "settings.write"
+  | "support.read"
+  | "support.write";
 
 export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
   "super-admin": [
@@ -45,8 +45,9 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     "applications.write",
     "announcements.send",
     "analytics.read",
-    "security.read",
     "settings.write",
+    "support.read",
+    "support.write",
   ],
   moderator: [
     "crew.read",
@@ -59,8 +60,9 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     "jobs.write",
     "applications.read",
     "analytics.read",
-    "security.read",
     "announcements.send",
+    "support.read",
+    "support.write",
   ],
   "support-agent": [
     "crew.read",
@@ -68,6 +70,8 @@ export const ROLE_PERMISSIONS: Record<AdminRole, Permission[]> = {
     "jobs.read",
     "applications.read",
     "announcements.send",
+    "support.read",
+    "support.write",
   ],
 };
 
@@ -325,48 +329,6 @@ export interface AnalyticsSnapshot {
   engagement: {
     dailyActivity: { d: string; sessions: number; applications: number }[];
   };
-}
-
-/* ===========================================================
-   Security
-=========================================================== */
-
-export type SecurityEventKind =
-  | "login-success"
-  | "login-failed"
-  | "password-reset"
-  | "mfa-enabled"
-  | "mfa-disabled"
-  | "suspicious-login"
-  | "session-revoked";
-
-export interface SecurityEvent {
-  id: ID;
-  kind: SecurityEventKind;
-  user: { id: ID; name: string; email: string; avatarUrl?: string };
-  ip: string;
-  device: string;
-  country?: string;
-  risk: "low" | "medium" | "high";
-  createdAt: ISODateString;
-}
-
-export interface AdminAuditEntry {
-  id: ID;
-  admin: { id: ID; name: string; role: AdminRole };
-  action: string;
-  target?: { type: string; id: ID; label: string };
-  createdAt: ISODateString;
-}
-
-export interface ActiveSession {
-  id: ID;
-  user: { id: ID; name: string; email: string; avatarUrl?: string };
-  ip: string;
-  device: string;
-  country?: string;
-  startedAt: ISODateString;
-  lastSeenAt: ISODateString;
 }
 
 /* ===========================================================

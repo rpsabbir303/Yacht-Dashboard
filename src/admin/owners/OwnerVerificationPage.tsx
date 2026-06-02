@@ -226,7 +226,7 @@ export const OwnerVerificationPage = () => {
                     <Avatar
                       src={row.avatarUrl}
                       size={36}
-                      className="!bg-white/[0.04] !text-grey-400"
+                      className="!bg-white/[0.05] !text-grey-400"
                     >
                       {initials(row.fullName)}
                     </Avatar>
@@ -327,7 +327,7 @@ export const OwnerVerificationPage = () => {
                       <button
                         type="button"
                         onClick={() => setDrawerId(row.id)}
-                        className="grid h-7 w-7 place-items-center rounded-lg text-grey-400 transition hover:bg-white/[0.04] hover:text-white"
+                        className="icon-btn icon-btn-sm h-7 w-7"
                         aria-label="View"
                       >
                         <EyeOutlined />
@@ -366,7 +366,7 @@ export const OwnerVerificationPage = () => {
                       placement="bottomRight"
                     >
                       <button
-                        className="grid h-7 w-7 place-items-center rounded-lg text-grey-400 transition hover:bg-white/[0.04] hover:text-white"
+                        className="icon-btn icon-btn-sm h-7 w-7"
                         aria-label="More actions"
                       >
                         <MoreOutlined />
@@ -407,7 +407,7 @@ const SummaryTile = ({
       </div>
       <div
         className={cn(
-          "mt-1 text-xl font-semibold tracking-tighter2",
+          "mt-1 text-xl font-bold tracking-tighter2",
           tone === "teal" && "text-teal-300",
           tone === "gold" && "text-gold-400",
           tone === "white" && "text-white",

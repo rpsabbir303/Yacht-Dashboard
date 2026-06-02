@@ -78,7 +78,7 @@ export const JobDetailsPage = () => {
         {/* Left: description + applications */}
         <div className="space-y-5">
           <GlassPanel title="Job description" padding="lg">
-            <p className="text-[13.5px] leading-relaxed text-grey-200">
+            <p className="text-[13.5px] leading-relaxed text-grey-300">
               {job.description}
             </p>
 
@@ -119,7 +119,7 @@ export const JobDetailsPage = () => {
                         <Avatar
                           src={row.candidate.avatarUrl}
                           size={32}
-                          className="!bg-white/[0.04] !text-grey-400"
+                          className="!bg-white/[0.05] !text-grey-400"
                         >
                           {initials(row.candidate.fullName)}
                         </Avatar>
@@ -196,7 +196,7 @@ export const JobDetailsPage = () => {
                       <Tooltip title="Open candidate">
                         <Link
                           to={`/admin/crew/${row.candidate.id}`}
-                          className="grid h-7 w-7 place-items-center rounded-lg text-grey-400 transition hover:bg-white/[0.04] hover:text-white"
+                          className="icon-btn icon-btn-sm h-7 w-7"
                           aria-label="Open"
                         >
                           <EyeOutlined />
@@ -214,7 +214,7 @@ export const JobDetailsPage = () => {
         <div className="space-y-5">
           <GlassPanel padding="none" className="overflow-hidden">
             {job.yacht.imageUrl && (
-              <div className="aspect-[16/9] w-full bg-white/[0.02]">
+              <div className="aspect-[16/9] w-full bg-white/[0.03]">
                 <img
                   src={job.yacht.imageUrl}
                   alt={job.yacht.name}
@@ -241,7 +241,7 @@ export const JobDetailsPage = () => {
               <Avatar
                 src={owner.avatarUrl}
                 size={44}
-                className="!bg-white/[0.04] !text-grey-300"
+                className="!bg-white/[0.05] !text-grey-300"
               >
                 {initials(owner.fullName)}
               </Avatar>
@@ -261,7 +261,7 @@ export const JobDetailsPage = () => {
                 className={
                   owner.verificationStatus === "approved"
                     ? ""
-                    : "!bg-white/[0.04] !text-grey-400"
+                    : "!bg-white/[0.05] !text-grey-400"
                 }
               >
                 {titleCase(owner.verificationStatus)}
@@ -328,7 +328,7 @@ const BulletList = ({ items }: { items: string[] }) =>
   items.length === 0 ? (
     <div className="text-[12.5px] text-grey-500">—</div>
   ) : (
-    <ul className="space-y-1.5 text-[13px] text-grey-200">
+    <ul className="space-y-1.5 text-[13px] text-grey-300">
       {items.map((it, i) => (
         <li key={i} className="flex items-start gap-2">
           <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-teal-500" />
@@ -344,7 +344,7 @@ const Chips = ({ items }: { items: string[] }) =>
   ) : (
     <div className="flex flex-wrap gap-1.5">
       {items.map((it) => (
-        <Tag key={it} bordered={false} className="!bg-white/[0.04] !text-grey-300">
+        <Tag key={it} bordered={false} className="!bg-white/[0.05] !text-grey-300">
           {it}
         </Tag>
       ))}
@@ -362,7 +362,7 @@ const KV = ({
 }) => (
   <div className="flex items-start gap-3">
     {icon && (
-      <span className="mt-0.5 grid h-7 w-7 place-items-center rounded-lg bg-white/[0.04] text-[13px] text-grey-300">
+      <span className="mt-0.5 grid h-7 w-7 place-items-center rounded-lg bg-white/[0.05] text-[13px] text-grey-300">
         {icon}
       </span>
     )}
@@ -376,11 +376,11 @@ const KV = ({
 );
 
 const Stat = ({ label, value }: { label: string; value: number | string }) => (
-  <div className="rounded-xl border border-white/[0.04] bg-white/[0.015] px-2 py-2.5">
+  <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-2 py-2.5">
     <div className="text-[10px] uppercase tracking-[0.18em] text-grey-500">
       {label}
     </div>
-    <div className="mt-1 text-[15px] font-semibold text-white">{value}</div>
+    <div className="mt-1 text-[15px] font-bold text-white">{value}</div>
   </div>
 );
 
@@ -399,7 +399,7 @@ const PipelineTile = ({
     </div>
     <div
       className={cn(
-        "mt-1 text-xl font-semibold tracking-tighter2",
+        "mt-1 text-xl font-bold tracking-tighter2",
         tone === "teal" && "text-teal-300",
         tone === "gold" && "text-gold-400",
         tone === "danger" && "text-[#C24545]",

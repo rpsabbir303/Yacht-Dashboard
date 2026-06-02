@@ -1,5 +1,4 @@
 import {
-  AlertOutlined,
   AppstoreOutlined,
   BellOutlined,
   CheckOutlined,
@@ -30,7 +29,6 @@ const CATEGORY_META: Record<
   owner: { icon: <UserOutlined />, tone: "text-gold-400" },
   job: { icon: <AppstoreOutlined />, tone: "text-white" },
   application: { icon: <SolutionOutlined />, tone: "text-teal-300" },
-  security: { icon: <AlertOutlined />, tone: "text-[#C24545]" },
   announcement: { icon: <NotificationOutlined />, tone: "text-teal-300" },
   system: { icon: <SettingOutlined />, tone: "text-grey-400" },
 };
@@ -54,7 +52,7 @@ export const NotificationDropdown = () => {
       menu={{ items: [] }}
       dropdownRender={() => (
         <div className="surface-card w-[380px] overflow-hidden !p-0">
-          <div className="flex items-center justify-between border-b border-white/[0.05] px-5 py-4">
+          <div className="flex items-center justify-between border-b border-white/[0.08] px-5 py-4">
             <div>
               <div className="text-[13px] font-semibold text-white">
                 Admin notifications
@@ -66,7 +64,7 @@ export const NotificationDropdown = () => {
             {unread > 0 && (
               <button
                 onClick={() => markRead()}
-                className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-teal-300 hover:bg-white/[0.04]"
+                className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-medium text-teal-300 hover:bg-white/[0.05]"
               >
                 <CheckOutlined /> Mark all read
               </button>
@@ -82,21 +80,18 @@ export const NotificationDropdown = () => {
                 />
               </div>
             ) : (
-              <ul className="divide-y divide-white/[0.04]">
+              <ul className="divide-y divide-white/[0.08]">
                 {items.map((n) => {
                   const meta = CATEGORY_META[n.category];
                   return (
                     <li key={n.id}>
                       <button
                         onClick={() => onClickItem(n)}
-                        className={cn(
-                          "flex w-full items-start gap-3 px-5 py-3.5 text-left transition hover:bg-white/[0.02]",
-                          !n.read && "bg-white/[0.015]",
-                        )}
+                        className="flex w-full items-start gap-3 px-5 py-3.5 text-left transition hover:bg-white/[0.03]"
                       >
                         <span
                           className={cn(
-                            "mt-0.5 grid h-8 w-8 place-items-center rounded-xl border border-white/[0.05] bg-white/[0.02]",
+                            "mt-0.5 grid h-8 w-8 place-items-center rounded-xl border border-white/[0.08] bg-white/[0.03]",
                             meta.tone,
                           )}
                         >
@@ -108,7 +103,10 @@ export const NotificationDropdown = () => {
                               {n.title}
                             </span>
                             {!n.read && (
-                              <span className="h-1.5 w-1.5 rounded-full bg-teal-400" />
+                              <span
+                                aria-label="Unread"
+                                className="h-1.5 w-1.5 shrink-0 rounded-full bg-teal-500"
+                              />
                             )}
                           </div>
                           {n.body && (
@@ -128,7 +126,7 @@ export const NotificationDropdown = () => {
             )}
           </div>
 
-          <div className="border-t border-white/[0.05] px-5 py-3 text-right">
+          <div className="border-t border-white/[0.08] px-5 py-3 text-right">
             <button
               onClick={() => navigate("/admin/notifications")}
               className="text-[12px] font-medium text-teal-300 hover:text-teal-200"
@@ -140,10 +138,14 @@ export const NotificationDropdown = () => {
       )}
     >
       <button
-        className="relative grid h-10 w-10 place-items-center rounded-xl text-grey-400 transition hover:bg-white/[0.04] hover:text-white"
-        aria-label="Notifications"
+        className="icon-btn relative h-10 w-10"
+        aria-label={
+          unread > 0
+            ? `Notifications, ${unread} unread`
+            : "Notifications"
+        }
       >
-        <Badge dot={unread > 0} offset={[-2, 4]} color="#14B8A6">
+        <Badge dot={unread > 0} offset={[-2, 4]} color="#22C7B8">
           <BellOutlined style={{ color: "inherit", fontSize: 18 }} />
         </Badge>
       </button>

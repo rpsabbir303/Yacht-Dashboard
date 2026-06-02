@@ -231,7 +231,7 @@ export const JobManagementPage = () => {
                   <Tooltip title="Open job">
                     <Link
                       to={`/admin/jobs/${row.id}`}
-                      className="grid h-7 w-7 place-items-center rounded-lg text-grey-400 transition hover:bg-white/[0.04] hover:text-white"
+                      className="icon-btn icon-btn-sm h-7 w-7"
                       aria-label="Open"
                     >
                       <EyeOutlined />
@@ -259,7 +259,7 @@ const Pill = ({
       "rounded-md px-1.5 py-0.5 ring-1",
       tone === "gold" && "bg-gold-500/[0.08] text-gold-400 ring-gold-500/20",
       tone === "teal" && "bg-teal-500/[0.08] text-teal-300 ring-teal-500/20",
-      tone === "white" && "bg-white/[0.04] text-grey-300 ring-white/[0.06]",
+      tone === "white" && "bg-white/[0.05] text-grey-300 ring-white/[0.08]",
       tone === "danger" && "bg-[#AA2727]/[0.10] text-[#C24545] ring-[#AA2727]/20",
     )}
   >
@@ -282,7 +282,7 @@ const SummaryTile = ({
     </div>
     <div
       className={cn(
-        "mt-1 text-xl font-semibold tracking-tighter2",
+        "mt-1 text-xl font-bold tracking-tighter2",
         tone === "teal" && "text-teal-300",
         tone === "gold" && "text-gold-400",
         tone === "danger" && "text-[#C24545]",

@@ -1,5 +1,4 @@
 import {
-  AlertOutlined,
   AppstoreOutlined,
   ArrowRightOutlined,
   ReloadOutlined,
@@ -26,7 +25,6 @@ import {
   useListApplicationsQuery,
   useListCrewQuery,
   useListOwnersQuery,
-  useListSecurityEventsQuery,
 } from "@services/adminApi";
 import { useListJobsQuery } from "@services/baseApi";
 import { fromNow, initials, titleCase } from "@utils/format";
@@ -35,7 +33,6 @@ import type {
   ApplicationSummary,
   CrewProfile,
   OwnerProfile,
-  SecurityEvent,
 } from "@/types";
 
 import {
@@ -60,14 +57,20 @@ interface StatProps {
 }
 
 const StatCard = ({ label, value, delta, icon, tone = "white", href }: StatProps) => {
+  const interactive = !!href;
   const body = (
-    <div className="surface-card group flex items-center justify-between gap-4 px-5 py-5 transition hover:border-white/[0.08]">
+    <div
+      className={cn(
+        "surface-card group flex items-center justify-between gap-4 px-5 py-5",
+        interactive && "surface-card-interactive",
+      )}
+    >
       <div className="min-w-0">
         <div className="text-[10px] uppercase tracking-[0.2em] text-grey-500">
           {label}
         </div>
         <div className="mt-1.5 flex items-baseline gap-2">
-          <div className="text-3xl font-semibold tracking-tighter2 text-white">
+          <div className="text-3xl font-bold tracking-tighter2 text-white">
             {value}
           </div>
           {delta && (
@@ -77,7 +80,7 @@ const StatCard = ({ label, value, delta, icon, tone = "white", href }: StatProps
                 tone === "danger" && "text-[#C24545]",
                 tone === "teal" && "text-teal-300",
                 tone === "gold" && "text-gold-400",
-                tone === "white" && "text-grey-400",
+                tone === "white" && "text-grey-500",
               )}
             >
               {delta}
@@ -88,10 +91,10 @@ const StatCard = ({ label, value, delta, icon, tone = "white", href }: StatProps
       <span
         className={cn(
           "grid h-11 w-11 shrink-0 place-items-center rounded-xl ring-1 transition",
-          tone === "teal" && "bg-teal-500/[0.06] text-teal-300 ring-teal-500/15",
-          tone === "gold" && "bg-gold-500/[0.06] text-gold-400 ring-gold-500/20",
+          tone === "teal" && "bg-teal-500/[0.08] text-teal-300 ring-teal-500/20",
+          tone === "gold" && "bg-gold-500/[0.08] text-gold-400 ring-gold-500/20",
           tone === "danger" && "bg-[#AA2727]/[0.08] text-[#C24545] ring-[#AA2727]/25",
-          tone === "white" && "bg-white/[0.03] text-white ring-white/[0.06]",
+          tone === "white" && "bg-white/[0.05] text-white ring-white/[0.08]",
         )}
       >
         {icon}
@@ -111,7 +114,7 @@ const StatCard = ({ label, value, delta, icon, tone = "white", href }: StatProps
 /*  Recent activity feed                                        */
 /* ============================================================ */
 
-type ActivityKind = "crew" | "owner" | "application" | "security";
+type ActivityKind = "crew" | "owner" | "application";
 
 interface ActivityRow {
   id: string;
@@ -139,13 +142,8 @@ const ACTIVITY_META: Record<
   },
   application: {
     label: "Application",
-    tone: "bg-white/[0.04] text-white ring-white/[0.08]",
+    tone: "bg-white/[0.05] text-white ring-white/[0.08]",
     icon: <SolutionOutlined />,
-  },
-  security: {
-    label: "Security",
-    tone: "bg-[#AA2727]/[0.08] text-[#C24545] ring-[#AA2727]/25",
-    icon: <AlertOutlined />,
   },
 };
 
@@ -153,12 +151,10 @@ const buildActivityFeed = ({
   crew,
   owners,
   applications,
-  securityEvents,
 }: {
   crew: CrewProfile[];
   owners: OwnerProfile[];
   applications: ApplicationSummary[];
-  securityEvents: SecurityEvent[];
 }): ActivityRow[] => {
   const rows: ActivityRow[] = [];
 
@@ -226,25 +222,6 @@ const buildActivityFeed = ({
       });
     });
 
-  securityEvents
-    .filter(
-      (e) => e.kind === "login-failed" || e.kind === "suspicious-login",
-    )
-    .forEach((e) => {
-      rows.push({
-        id: `sec_${e.id}`,
-        kind: "security",
-        actor: { name: e.user.name, avatarUrl: e.user.avatarUrl },
-        summary:
-          e.kind === "suspicious-login"
-            ? "suspicious login attempt blocked"
-            : "failed login attempt",
-        meta: `${e.ip}${e.country ? ` · ${e.country}` : ""}`,
-        at: e.createdAt,
-        href: "/admin/security",
-      });
-    });
-
   return rows
     .sort((a, b) => b.at.localeCompare(a.at))
     .slice(0, 8);
@@ -266,7 +243,6 @@ export const AdminDashboardPage = () => {
   const { data: crew = [] } = useListCrewQuery();
   const { data: owners = [] } = useListOwnersQuery();
   const { data: applications = [] } = useListApplicationsQuery();
-  const { data: securityEvents = [] } = useListSecurityEventsQuery();
   const { data: jobsPage } = useListJobsQuery();
 
   /* ---- derived ---- */
@@ -304,9 +280,8 @@ export const AdminDashboardPage = () => {
   );
 
   const activity = useMemo(
-    () =>
-      buildActivityFeed({ crew, owners, applications, securityEvents }),
-    [crew, owners, applications, securityEvents],
+    () => buildActivityFeed({ crew, owners, applications }),
+    [crew, owners, applications],
   );
 
   const greeting = (() => {
@@ -412,11 +387,11 @@ export const AdminDashboardPage = () => {
 
 const RecentActivityPanel = ({ rows }: { rows: ActivityRow[] }) => (
   <GlassPanel padding="none" className="overflow-hidden">
-    <div className="flex items-end justify-between border-b border-white/[0.05] px-6 pt-6 pb-4">
+    <div className="flex items-end justify-between border-b border-white/[0.08] px-6 pt-6 pb-4">
       <div>
         <h3 className="text-[15px] font-semibold text-white">Recent activity</h3>
         <div className="text-[11.5px] text-grey-500">
-          Verifications · applications · security signals
+          Verifications · applications · platform activity
         </div>
       </div>
     </div>
@@ -461,7 +436,7 @@ const RecentActivityPanel = ({ rows }: { rows: ActivityRow[] }) => (
                 <Avatar
                   src={row.actor.avatarUrl}
                   size={28}
-                  className="!bg-white/[0.04] !text-grey-400"
+                  className="!bg-white/[0.05] !text-grey-400"
                 >
                   {initials(row.actor.name)}
                 </Avatar>
@@ -500,7 +475,7 @@ const RecentActivityPanel = ({ rows }: { rows: ActivityRow[] }) => (
             render: (_: unknown, row: ActivityRow) => (
               <Link
                 to={row.href}
-                className="grid h-7 w-7 place-items-center rounded-lg text-grey-500 transition hover:bg-white/[0.04] hover:text-white"
+                className="icon-btn icon-btn-sm h-7 w-7"
                 aria-label="Open"
               >
                 <ArrowRightOutlined />
@@ -535,7 +510,7 @@ const VerificationQueuePanel = ({
 
   return (
     <GlassPanel padding="none" className="overflow-hidden">
-      <div className="flex items-end justify-between border-b border-white/[0.05] px-6 pt-6 pb-4">
+      <div className="flex items-end justify-between border-b border-white/[0.08] px-6 pt-6 pb-4">
         <div>
           <h3 className="text-[15px] font-semibold text-white">
             Verification queue
@@ -546,7 +521,7 @@ const VerificationQueuePanel = ({
         </div>
       </div>
 
-      <div className="divide-y divide-white/[0.04]">
+      <div className="divide-y divide-white/[0.08]">
         <QueueSection
           icon={<TeamOutlined />}
           label="Pending crew"
@@ -661,7 +636,7 @@ const QueueSection = ({
             "grid h-7 w-7 place-items-center rounded-lg ring-1",
             tone === "gold" && "bg-gold-500/[0.08] text-gold-400 ring-gold-500/20",
             tone === "teal" && "bg-teal-500/[0.08] text-teal-300 ring-teal-500/20",
-            tone === "white" && "bg-white/[0.04] text-white ring-white/[0.08]",
+            tone === "white" && "bg-white/[0.05] text-white ring-white/[0.08]",
           )}
         >
           {icon}
@@ -699,7 +674,7 @@ const QueueItem = ({
   <li>
     <Link
       to={href}
-      className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition hover:bg-white/[0.02]"
+      className="flex items-center gap-2 rounded-lg px-2 py-1.5 transition hover:bg-white/[0.05]"
     >
       <div className="min-w-0 flex-1">
         <div className="truncate text-[12.5px] text-white">{primary}</div>

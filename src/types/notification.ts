@@ -6,7 +6,6 @@ export type NotificationCategory =
   | "owner"
   | "job"
   | "application"
-  | "security"
   | "announcement"
   | "system";
 

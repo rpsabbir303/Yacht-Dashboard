@@ -14,7 +14,7 @@ import {
 } from "@ant-design/icons";
 import { Avatar, Button, Modal, Progress, Tag, message } from "antd";
 import { useState, type ReactNode } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 
 import { PageHeader } from "@components/common/PageHeader";
 import { GlassPanel } from "@components/common/GlassPanel";
@@ -33,7 +33,6 @@ import type { AdminAccountStatus, VerificationDocument } from "@/types";
 
 export const CrewProfilePage = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const confirm = useConfirm();
 
   const { data: crew, isLoading } = useGetCrewProfileQuery(id ?? "", {
@@ -165,7 +164,7 @@ export const CrewProfilePage = () => {
             <Avatar
               src={crew.avatarUrl}
               size={96}
-              className="!bg-white/[0.04] !text-grey-300"
+              className="!bg-white/[0.05] !text-grey-300"
             >
               {initials(crew.fullName)}
             </Avatar>
@@ -220,7 +219,7 @@ export const CrewProfilePage = () => {
               Profile completion
             </div>
             <div className="mt-2 flex items-baseline gap-2">
-              <div className="text-3xl font-semibold tracking-tighter2 text-white">
+              <div className="text-3xl font-bold tracking-tighter2 text-white">
                 {crew.profileCompletion}
                 <span className="text-base text-grey-500">%</span>
               </div>
@@ -230,12 +229,12 @@ export const CrewProfilePage = () => {
               showInfo={false}
               strokeColor={
                 crew.profileCompletion >= 80
-                  ? "#14B8A6"
+                  ? "#22C7B8"
                   : crew.profileCompletion >= 60
-                    ? "#C6A75E"
-                    : "#71717A"
+                    ? "#D4B25F"
+                    : "#6B7280"
               }
-              trailColor="rgba(255,255,255,0.06)"
+              trailColor="rgba(255,255,255,0.08)"
               className="!m-0 mt-2"
             />
           </div>
@@ -286,10 +285,10 @@ export const CrewProfilePage = () => {
             {crew.experience.length === 0 ? (
               <Empty>No experience recorded.</Empty>
             ) : (
-              <ul className="divide-y divide-white/[0.04]">
+              <ul className="divide-y divide-white/[0.08]">
                 {crew.experience.map((e, i) => (
                   <li key={i} className="flex items-start gap-3 py-3">
-                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.04] text-[14px] text-grey-300">
+                    <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/[0.05] text-[14px] text-grey-300">
                       <UserOutlined />
                     </span>
                     <div className="flex-1">
@@ -317,9 +316,9 @@ export const CrewProfilePage = () => {
                 {crew.certifications.map((c) => (
                   <li
                     key={c.id}
-                    className="flex items-start gap-3 rounded-xl border border-white/[0.04] px-3 py-2.5"
+                    className="flex items-start gap-3 rounded-xl border border-white/[0.08] px-3 py-2.5"
                   >
-                    <span className="mt-0.5 grid h-7 w-7 place-items-center rounded-lg bg-white/[0.04] text-[13px] text-grey-300">
+                    <span className="mt-0.5 grid h-7 w-7 place-items-center rounded-lg bg-white/[0.05] text-[13px] text-grey-300">
                       <SafetyCertificateOutlined />
                     </span>
                     <div className="min-w-0 flex-1">
@@ -334,7 +333,7 @@ export const CrewProfilePage = () => {
                     <Tag
                       color={c.verified ? "cyan" : "default"}
                       bordered={false}
-                      className={c.verified ? "" : "!bg-white/[0.04] !text-grey-400"}
+                      className={c.verified ? "" : "!bg-white/[0.05] !text-grey-400"}
                     >
                       {c.verified ? "Verified" : "Pending"}
                     </Tag>
@@ -358,9 +357,9 @@ export const CrewProfilePage = () => {
                     <button
                       type="button"
                       onClick={() => setPreviewDoc(d)}
-                      className="flex w-full items-center gap-3 rounded-xl border border-white/[0.04] bg-white/[0.015] px-3 py-2.5 text-left transition hover:border-white/[0.08]"
+                      className="flex w-full items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-left transition hover:border-teal-500/35"
                     >
-                      <span className="grid h-9 w-9 place-items-center rounded-lg bg-white/[0.04] text-[13px] text-grey-300">
+                      <span className="grid h-9 w-9 place-items-center rounded-lg bg-white/[0.05] text-[13px] text-grey-300">
                         <IdcardOutlined />
                       </span>
                       <div className="min-w-0 flex-1">
@@ -377,7 +376,7 @@ export const CrewProfilePage = () => {
                         className={
                           d.status === "verified"
                             ? ""
-                            : "!bg-white/[0.04] !text-grey-400"
+                            : "!bg-white/[0.05] !text-grey-400"
                         }
                       >
                         {titleCase(d.status)}
@@ -394,7 +393,7 @@ export const CrewProfilePage = () => {
             {crew.visas.length === 0 ? (
               <Empty>No visas on file.</Empty>
             ) : (
-              <ul className="divide-y divide-white/[0.04]">
+              <ul className="divide-y divide-white/[0.08]">
                 {crew.visas.map((v, i) => (
                   <li key={i} className="flex items-center justify-between py-2.5">
                     <div>
@@ -419,7 +418,7 @@ export const CrewProfilePage = () => {
             {crew.references.length === 0 ? (
               <Empty>No references provided.</Empty>
             ) : (
-              <ul className="divide-y divide-white/[0.04]">
+              <ul className="divide-y divide-white/[0.08]">
                 {crew.references.map((r) => (
                   <li key={r.id} className="py-3">
                     <div className="flex items-center justify-between">
@@ -429,7 +428,7 @@ export const CrewProfilePage = () => {
                       <Tag
                         color={r.verified ? "cyan" : "default"}
                         bordered={false}
-                        className={r.verified ? "" : "!bg-white/[0.04] !text-grey-400"}
+                        className={r.verified ? "" : "!bg-white/[0.05] !text-grey-400"}
                       >
                         {r.verified ? "Verified" : "Pending"}
                       </Tag>
@@ -474,7 +473,7 @@ export const CrewProfilePage = () => {
         title={previewDoc?.name}
       >
         {previewDoc && (
-          <div className="overflow-hidden rounded-2xl border border-white/[0.05]">
+          <div className="overflow-hidden rounded-2xl border border-white/[0.08]">
             <img
               src={previewDoc.url}
               alt={previewDoc.name}
@@ -512,18 +511,18 @@ const KV = ({ label, value }: { label: string; value: ReactNode }) => (
 );
 
 const Stat = ({ label, value }: { label: string; value: ReactNode }) => (
-  <div className="rounded-xl border border-white/[0.04] bg-white/[0.015] px-2 py-2.5">
+  <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-2 py-2.5">
     <div className="text-[10px] uppercase tracking-[0.18em] text-grey-500">
       {label}
     </div>
-    <div className="mt-1 text-[15px] font-semibold text-white">{value}</div>
+    <div className="mt-1 text-[15px] font-bold text-white">{value}</div>
   </div>
 );
 
 const Empty = ({ children }: { children: ReactNode }) => (
   <div
     className={cn(
-      "rounded-xl border border-dashed border-white/[0.05] px-3 py-4 text-center text-[12.5px] text-grey-500",
+      "rounded-xl border border-dashed border-white/[0.08] px-3 py-4 text-center text-[12.5px] text-grey-500",
     )}
   >
     {children}

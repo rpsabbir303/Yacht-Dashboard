@@ -4,7 +4,13 @@ import type {
   ApplicationStatus,
   CrewAvailability,
   JobStatus,
+  SupportTicketPriority,
+  SupportTicketStatus,
   VerificationStatus,
+} from "@/types";
+import {
+  SUPPORT_PRIORITY_LABEL,
+  SUPPORT_STATUS_LABEL,
 } from "@/types";
 
 type Tone = "teal" | "gold" | "danger" | "neutral" | "white";
@@ -28,7 +34,7 @@ const TONE_CLASS: Record<Tone, { dot: string; text: string; chipBg: string }> = 
   neutral: {
     dot: "bg-grey-500",
     text: "text-grey-400",
-    chipBg: "bg-white/[0.03] text-grey-400 ring-1 ring-white/[0.06]",
+    chipBg: "bg-white/[0.05] text-grey-400 ring-1 ring-white/[0.08]",
   },
   white: {
     dot: "bg-white",
@@ -88,6 +94,26 @@ const APPLICATION: Record<
   rejected: { label: "Rejected", tone: "danger" },
 };
 
+const SUPPORT_STATUS: Record<
+  SupportTicketStatus,
+  { label: string; tone: Tone }
+> = {
+  open: { label: SUPPORT_STATUS_LABEL.open, tone: "teal" },
+  pending: { label: SUPPORT_STATUS_LABEL.pending, tone: "gold" },
+  resolved: { label: SUPPORT_STATUS_LABEL.resolved, tone: "white" },
+  closed: { label: SUPPORT_STATUS_LABEL.closed, tone: "neutral" },
+};
+
+const SUPPORT_PRIORITY: Record<
+  SupportTicketPriority,
+  { label: string; tone: Tone }
+> = {
+  low: { label: SUPPORT_PRIORITY_LABEL.low, tone: "neutral" },
+  medium: { label: SUPPORT_PRIORITY_LABEL.medium, tone: "white" },
+  high: { label: SUPPORT_PRIORITY_LABEL.high, tone: "gold" },
+  urgent: { label: SUPPORT_PRIORITY_LABEL.urgent, tone: "danger" },
+};
+
 /* ---- Component ---- */
 
 type Variant = "dot" | "chip";
@@ -122,6 +148,18 @@ type Props =
       value: ApplicationStatus;
       variant?: Variant;
       className?: string;
+    }
+  | {
+      kind: "support-status";
+      value: SupportTicketStatus;
+      variant?: Variant;
+      className?: string;
+    }
+  | {
+      kind: "support-priority";
+      value: SupportTicketPriority;
+      variant?: Variant;
+      className?: string;
     };
 
 const resolve = (props: Props): { label: string; tone: Tone } => {
@@ -136,6 +174,10 @@ const resolve = (props: Props): { label: string; tone: Tone } => {
       return JOB[props.value];
     case "application":
       return APPLICATION[props.value];
+    case "support-status":
+      return SUPPORT_STATUS[props.value];
+    case "support-priority":
+      return SUPPORT_PRIORITY[props.value];
   }
 };
 

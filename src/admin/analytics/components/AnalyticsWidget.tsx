@@ -34,14 +34,14 @@ export const KpiRow = ({
     {items.map((it) => (
       <div
         key={it.label}
-        className="rounded-xl border border-white/[0.04] bg-white/[0.015] px-4 py-3"
+        className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3"
       >
         <div className="text-[10px] uppercase tracking-[0.18em] text-grey-500">
           {it.label}
         </div>
         <div
           className={cn(
-            "mt-1 text-xl font-semibold tracking-tighter2",
+            "mt-1 text-xl font-bold tracking-tighter2",
             it.tone === "teal" && "text-teal-300",
             it.tone === "gold" && "text-gold-400",
             it.tone === "danger" && "text-[#C24545]",

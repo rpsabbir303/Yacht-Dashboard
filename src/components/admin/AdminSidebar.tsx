@@ -1,12 +1,12 @@
 import {
   AppstoreOutlined,
   AreaChartOutlined,
-  AuditOutlined,
   ControlOutlined,
   DashboardOutlined,
   LogoutOutlined,
   NotificationOutlined,
   SafetyCertificateOutlined,
+  CustomerServiceOutlined,
   SolutionOutlined,
   TeamOutlined,
 } from "@ant-design/icons";
@@ -24,13 +24,11 @@ import { initials } from "@utils/format";
 import type { Permission } from "@/types";
 
 /**
- * Shared layout IDs for the animated active indicator. Framer Motion uses these
- * to interpolate the background pill and the teal rail between nav items when
- * the active route changes — gives the sidebar a magnetic, premium feel rather
- * than the old hard re-paint.
+ * Shared layout ID for the animated active pill. Framer Motion interpolates
+ * the teal-tinted background between nav items when the route changes,
+ * giving the sidebar a magnetic feel instead of a hard re-paint.
  */
 const ACTIVE_BG_ID = "admin-sidebar-active-bg";
-const ACTIVE_RAIL_ID = "admin-sidebar-active-rail";
 const ACTIVE_TRANSITION = {
   type: "spring",
   stiffness: 420,
@@ -79,6 +77,13 @@ const NAV_OPERATIONS: NavItem[] = [
     icon: <SolutionOutlined />,
     permission: "applications.read",
   },
+  {
+    to: "/admin/support",
+    label: "Support",
+    icon: <CustomerServiceOutlined />,
+    permission: "support.read",
+    match: "/admin/support",
+  },
 ];
 
 const NAV_INTELLIGENCE: NavItem[] = [
@@ -93,12 +98,6 @@ const NAV_INTELLIGENCE: NavItem[] = [
     label: "Notifications",
     icon: <NotificationOutlined />,
     permission: "announcements.send",
-  },
-  {
-    to: "/admin/security",
-    label: "Security Logs",
-    icon: <AuditOutlined />,
-    permission: "security.read",
   },
 ];
 
@@ -151,7 +150,7 @@ const NavGroup = ({
                     "group relative flex items-center gap-3 rounded-xl px-3 py-2 text-[13.5px] transition-colors duration-200",
                     isActive
                       ? "text-white"
-                      : "text-grey-400 hover:bg-white/[0.025] hover:text-white",
+                      : "text-grey-400 hover:bg-white/[0.05] hover:text-white",
                     collapsed && "justify-center px-2",
                   )
                 }
@@ -159,26 +158,18 @@ const NavGroup = ({
                 {({ isActive }) => (
                   <>
                     {isActive && (
-                      <>
-                        <motion.span
-                          layoutId={ACTIVE_BG_ID}
-                          aria-hidden
-                          className="pointer-events-none absolute inset-0 rounded-xl bg-white/[0.04]"
-                          transition={ACTIVE_TRANSITION}
-                        />
-                        <motion.span
-                          layoutId={ACTIVE_RAIL_ID}
-                          aria-hidden
-                          className="pointer-events-none absolute inset-y-1 left-0 w-[2px] rounded-r-full bg-teal-500"
-                          transition={ACTIVE_TRANSITION}
-                        />
-                      </>
+                      <motion.span
+                        layoutId={ACTIVE_BG_ID}
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 rounded-xl bg-teal-500/[0.12]"
+                        transition={ACTIVE_TRANSITION}
+                      />
                     )}
                     <span
                       className={cn(
                         "relative z-[1] text-[15px] leading-none transition-colors",
                         isActive
-                          ? "text-teal-400"
+                          ? "text-teal-500"
                           : "text-grey-500 group-hover:text-white",
                       )}
                     >
@@ -219,7 +210,7 @@ export const AdminSidebar = ({ mobile = false }: SidebarProps) => {
   return (
     <aside
       className={cn(
-        "relative flex h-full flex-col border-r border-white/[0.05] bg-ink",
+        "relative flex h-full flex-col border-r border-white/[0.08] bg-ink",
         collapsed ? "w-[76px]" : "w-[248px]",
         "transition-[width] duration-300",
       )}
@@ -238,8 +229,9 @@ export const AdminSidebar = ({ mobile = false }: SidebarProps) => {
       {!mobile && (
         <button
           onClick={() => dispatch(toggleSidebar())}
-          className="absolute -right-3 top-8 hidden h-6 w-6 items-center justify-center rounded-full border border-white/[0.06] bg-surface text-grey-400 transition hover:border-teal-500/40 hover:text-white lg:flex"
-          aria-label="Toggle sidebar"
+          className="icon-btn icon-btn-circle absolute -right-3 top-8 hidden h-6 w-6 lg:flex"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={!collapsed}
         >
           <svg
             viewBox="0 0 24 24"
@@ -258,7 +250,7 @@ export const AdminSidebar = ({ mobile = false }: SidebarProps) => {
         <NavGroup items={NAV_PRIMARY} collapsed={collapsed} onNavigate={close} />
 
         <div className={cn("mt-2", collapsed ? "px-3" : "px-5")}>
-          <div className="h-px bg-white/[0.04]" />
+          <div className="h-px bg-white/[0.08]" />
         </div>
         <NavGroup
           label="Operations"
@@ -268,7 +260,7 @@ export const AdminSidebar = ({ mobile = false }: SidebarProps) => {
         />
 
         <div className={cn("mt-2", collapsed ? "px-3" : "px-5")}>
-          <div className="h-px bg-white/[0.04]" />
+          <div className="h-px bg-white/[0.08]" />
         </div>
         <NavGroup
           label="Intelligence"
@@ -278,7 +270,7 @@ export const AdminSidebar = ({ mobile = false }: SidebarProps) => {
         />
 
         <div className={cn("mt-2", collapsed ? "px-3" : "px-5")}>
-          <div className="h-px bg-white/[0.04]" />
+          <div className="h-px bg-white/[0.08]" />
         </div>
         <NavGroup
           label="System"
@@ -292,7 +284,7 @@ export const AdminSidebar = ({ mobile = false }: SidebarProps) => {
       {/* Footer */}
       <div
         className={cn(
-          "border-t border-white/[0.05] p-3",
+          "border-t border-white/[0.08] p-3",
           collapsed && "flex justify-center",
         )}
       >
@@ -300,15 +292,15 @@ export const AdminSidebar = ({ mobile = false }: SidebarProps) => {
           <Tooltip title="Sign out" placement="right">
             <button
               onClick={signOut}
-              className="grid h-10 w-10 place-items-center rounded-xl text-grey-400 transition hover:bg-white/[0.04] hover:text-white"
+              className="icon-btn h-10 w-10"
               aria-label="Sign out"
             >
               <LogoutOutlined />
             </button>
           </Tooltip>
         ) : (
-          <div className="flex items-center gap-3 rounded-2xl border border-white/[0.05] bg-surface px-3 py-2.5">
-            <div className="grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-white/[0.04] text-[12px] font-semibold text-grey-400">
+          <div className="flex items-center gap-3 rounded-2xl border border-white/[0.08] bg-surface px-3 py-2.5">
+            <div className="grid h-9 w-9 place-items-center overflow-hidden rounded-full bg-white/[0.05] text-[12px] font-semibold text-grey-400">
               {user?.avatarUrl ? (
                 <img
                   src={user.avatarUrl}
@@ -327,13 +319,15 @@ export const AdminSidebar = ({ mobile = false }: SidebarProps) => {
                 {adminRoleLabel ?? "Admin"}
               </div>
             </div>
-            <button
-              onClick={signOut}
-              className="rounded-lg p-1.5 text-grey-400 transition hover:bg-white/[0.04] hover:text-white"
-              aria-label="Sign out"
-            >
-              <LogoutOutlined />
-            </button>
+            <Tooltip title="Sign out">
+              <button
+                onClick={signOut}
+                className="icon-btn-subtle icon-btn-sm h-8 w-8 shrink-0"
+                aria-label="Sign out"
+              >
+                <LogoutOutlined />
+              </button>
+            </Tooltip>
           </div>
         )}
       </div>

@@ -17,8 +17,8 @@ const KIND_LABEL: Record<SearchResultKind, string> = {
 const KIND_TONE: Record<SearchResultKind, string> = {
   crew: "text-teal-300 bg-teal-500/10 ring-teal-500/20",
   owner: "text-gold-400 bg-gold-500/10 ring-gold-500/20",
-  job: "text-white bg-white/[0.04] ring-white/[0.08]",
-  application: "text-grey-300 bg-white/[0.03] ring-white/[0.06]",
+  job: "text-white bg-white/[0.05] ring-white/[0.08]",
+  application: "text-grey-300 bg-white/[0.05] ring-white/[0.08]",
 };
 
 /**
@@ -90,9 +90,9 @@ export const CommandPalette = () => {
             exit={{ y: -12, opacity: 0 }}
             transition={{ duration: 0.18 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-[680px] overflow-hidden rounded-3xl border border-white/[0.06] bg-surface shadow-elevated"
+            className="w-full max-w-[680px] overflow-hidden rounded-3xl border border-white/[0.08] bg-surface shadow-elevated"
           >
-            <div className="border-b border-white/[0.05] px-5 py-3.5">
+            <div className="border-b border-white/[0.08] px-5 py-3.5">
               <Input
                 autoFocus
                 size="large"
@@ -102,7 +102,7 @@ export const CommandPalette = () => {
                 bordered={false}
                 className="!bg-transparent !text-white placeholder:!text-grey-500"
                 suffix={
-                  <kbd className="hidden rounded-md border border-white/[0.06] bg-white/[0.04] px-1.5 py-0.5 text-[10px] font-medium text-grey-500 sm:inline-block">
+                  <kbd className="hidden rounded-md border border-white/[0.08] bg-white/[0.05] px-1.5 py-0.5 text-[10px] font-medium text-grey-500 sm:inline-block">
                     ESC
                   </kbd>
                 }
@@ -125,12 +125,12 @@ export const CommandPalette = () => {
                   </div>
                   {!query.trim() && (
                     <div className="mt-3 flex items-center justify-center gap-2 text-[11px] uppercase tracking-[0.18em] text-grey-500">
-                      <kbd className="rounded-md border border-white/[0.06] bg-white/[0.04] px-1.5 py-0.5 normal-case tracking-normal text-grey-400">
+                      <kbd className="rounded-md border border-white/[0.08] bg-white/[0.05] px-1.5 py-0.5 normal-case tracking-normal text-grey-400">
                         ↑↓
                       </kbd>
                       <span>Navigate</span>
                       <span className="text-grey-600">·</span>
-                      <kbd className="rounded-md border border-white/[0.06] bg-white/[0.04] px-1.5 py-0.5 normal-case tracking-normal text-grey-400">
+                      <kbd className="rounded-md border border-white/[0.08] bg-white/[0.05] px-1.5 py-0.5 normal-case tracking-normal text-grey-400">
                         Enter
                       </kbd>
                       <span>Open</span>
@@ -158,8 +158,8 @@ export const CommandPalette = () => {
                             className={cn(
                               "flex w-full items-center gap-3 px-5 py-2.5 text-left transition-colors",
                               isActive
-                                ? "bg-white/[0.04]"
-                                : "hover:bg-white/[0.02]",
+                                ? "bg-teal-500/[0.08]"
+                                : "hover:bg-white/[0.05]",
                             )}
                           >
                             <span

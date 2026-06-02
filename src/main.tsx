@@ -16,20 +16,46 @@ import "./index.css";
  * - Single accent (teal) for actions & active states.
  * - Surfaces match Tailwind tokens precisely so visual edges align.
  */
+/**
+ * Strict design tokens — Meridian admin (cool-dark palette).
+ *
+ *   bg            #050B14   page background
+ *   card          #0F1724   container / panel
+ *   surface high  #151E2D   elevated / secondary surface
+ *   accent        #22C7B8   single accent
+ *   text primary  #FFFFFF
+ *   text secondary#94A3B8
+ *   text muted    #64748B
+ *   border        rgba(255,255,255,0.08)
+ *   border hover  rgba(34,199,184,0.35)
+ *   hover overlay rgba(255,255,255,0.05)
+ */
 const antdTheme = {
   algorithm: antTheme.darkAlgorithm,
   token: {
-    colorPrimary: "#14B8A6",
-    colorInfo: "#14B8A6",
-    colorSuccess: "#14B8A6",
-    colorWarning: "#C6A75E",
+    colorPrimary: "#22C7B8",
+    colorInfo: "#22C7B8",
+    colorSuccess: "#22C7B8",
+    colorWarning: "#D4B25F",
     colorError: "#AA2727",
-    colorBgBase: "#0D0F12",
-    colorBgContainer: "#171A1F",
-    colorBgElevated: "#171A1F",
+    colorBgBase: "#050B14",
+    colorBgContainer: "#0F1724",
+    colorBgElevated: "#0F1724",
     colorTextBase: "#FFFFFF",
-    colorBorder: "rgba(255,255,255,0.06)",
-    colorBorderSecondary: "rgba(255,255,255,0.04)",
+    colorText: "#FFFFFF",
+    colorTextSecondary: "#94A3B8",
+    colorTextTertiary: "#64748B",
+    colorTextQuaternary: "#64748B",
+    colorTextDescription: "#94A3B8",
+    colorTextPlaceholder: "#64748B",
+    colorTextDisabled: "#475569",
+    colorBorder: "rgba(255,255,255,0.08)",
+    colorBorderSecondary: "rgba(255,255,255,0.05)",
+    colorSplit: "rgba(255,255,255,0.08)",
+    colorFill: "rgba(255,255,255,0.05)",
+    colorFillSecondary: "rgba(255,255,255,0.05)",
+    colorFillTertiary: "rgba(255,255,255,0.03)",
+    colorFillQuaternary: "rgba(255,255,255,0.02)",
     borderRadius: 12,
     borderRadiusLG: 16,
     borderRadiusSM: 8,
@@ -49,9 +75,9 @@ const antdTheme = {
     },
     Tag: { borderRadiusSM: 999, fontSizeSM: 11 },
     Modal: { paddingContentHorizontalLG: 24 },
-    Card: { colorBgContainer: "#171A1F" },
-    Table: { headerBg: "transparent", rowHoverBg: "rgba(255,255,255,0.02)" },
-    Tabs: { itemSelectedColor: "#FFFFFF", inkBarColor: "#14B8A6" },
+    Card: { colorBgContainer: "#0F1724" },
+    Table: { headerBg: "transparent", rowHoverBg: "rgba(255,255,255,0.03)" },
+    Tabs: { itemSelectedColor: "#FFFFFF", inkBarColor: "#22C7B8" },
   },
 };
 

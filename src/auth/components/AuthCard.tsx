@@ -28,11 +28,11 @@ export const AuthCard = ({
     className="w-full max-w-[440px]"
   >
     {eyebrow && <div className="eyebrow">{eyebrow}</div>}
-    <h1 className="mt-3 text-[28px] font-semibold leading-[1.15] tracking-tighter2 text-white">
+    <h1 className="mt-3 text-[28px] font-bold leading-[1.15] tracking-tighter2 text-white">
       {title}
     </h1>
     {description && (
-      <div className="muted mt-2 text-[13.5px] leading-relaxed">
+      <div className="mt-2 text-[13.5px] leading-relaxed text-grey-400">
         {description}
       </div>
     )}
@@ -40,7 +40,7 @@ export const AuthCard = ({
     <div className="mt-8 space-y-5">{children}</div>
 
     {footer && (
-      <div className="mt-8 border-t border-white/[0.05] pt-5 text-[12.5px] text-grey-400">
+      <div className="mt-8 border-t border-white/[0.08] pt-5 text-[12.5px] text-grey-400">
         {footer}
       </div>
     )}

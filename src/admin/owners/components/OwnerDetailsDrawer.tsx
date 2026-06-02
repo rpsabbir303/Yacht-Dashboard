@@ -92,12 +92,12 @@ export const OwnerDetailsDrawer = ({ owner, open, onClose }: Props) => {
       bodyStyle={{ padding: 0 }}
     >
       {/* Header */}
-      <div className="border-b border-white/[0.05] px-6 py-5">
+      <div className="border-b border-white/[0.08] px-6 py-5">
         <div className="flex items-start gap-4">
           <Avatar
             src={owner.avatarUrl}
             size={56}
-            className="!bg-white/[0.04] !text-grey-300"
+            className="!bg-white/[0.05] !text-grey-300"
           >
             {initials(owner.fullName)}
           </Avatar>
@@ -158,11 +158,11 @@ export const OwnerDetailsDrawer = ({ owner, open, onClose }: Props) => {
       {/* Body */}
       <div className="space-y-5 px-6 py-6">
         {owner.notes && (
-          <div className="rounded-xl border border-gold-500/20 bg-gold-500/[0.04] px-3.5 py-2.5">
+          <div className="rounded-xl border border-gold-500/20 bg-gold-500/[0.06] px-3.5 py-2.5">
             <div className="text-[10px] uppercase tracking-[0.18em] text-gold-400">
               Outstanding request
             </div>
-            <p className="mt-0.5 text-[12.5px] text-grey-200">{owner.notes}</p>
+            <p className="mt-0.5 text-[12.5px] text-grey-300">{owner.notes}</p>
           </div>
         )}
 
@@ -192,10 +192,10 @@ export const OwnerDetailsDrawer = ({ owner, open, onClose }: Props) => {
               {owner.vessels.map((v) => (
                 <li
                   key={v.id}
-                  className="overflow-hidden rounded-xl border border-white/[0.05] bg-white/[0.015]"
+                  className="overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.03]"
                 >
                   {v.imageUrl && (
-                    <div className="aspect-[16/9] w-full bg-white/[0.02]">
+                    <div className="aspect-[16/9] w-full bg-white/[0.03]">
                       <img
                         src={v.imageUrl}
                         alt={v.name}
@@ -229,9 +229,9 @@ export const OwnerDetailsDrawer = ({ owner, open, onClose }: Props) => {
                   <button
                     type="button"
                     onClick={() => setPreviewDoc(d)}
-                    className="flex w-full items-center gap-3 rounded-xl border border-white/[0.04] bg-white/[0.015] px-3 py-2.5 text-left transition hover:border-white/[0.08]"
+                    className="flex w-full items-center gap-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-left transition hover:border-teal-500/35"
                   >
-                    <span className="grid h-9 w-9 place-items-center rounded-lg bg-white/[0.04] text-[13px] text-grey-300">
+                    <span className="grid h-9 w-9 place-items-center rounded-lg bg-white/[0.05] text-[13px] text-grey-300">
                       <IdcardOutlined />
                     </span>
                     <div className="min-w-0 flex-1">
@@ -248,7 +248,7 @@ export const OwnerDetailsDrawer = ({ owner, open, onClose }: Props) => {
                       className={
                         d.status === "verified"
                           ? ""
-                          : "!bg-white/[0.04] !text-grey-400"
+                          : "!bg-white/[0.05] !text-grey-400"
                       }
                     >
                       {titleCase(d.status)}
@@ -270,7 +270,7 @@ export const OwnerDetailsDrawer = ({ owner, open, onClose }: Props) => {
         title={previewDoc?.name}
       >
         {previewDoc && (
-          <div className="overflow-hidden rounded-2xl border border-white/[0.05]">
+          <div className="overflow-hidden rounded-2xl border border-white/[0.08]">
             <img
               src={previewDoc.url}
               alt={previewDoc.name}
@@ -305,7 +305,7 @@ const KV = ({ label, value }: { label: string; value: ReactNode }) => (
 );
 
 const Empty = ({ children }: { children: ReactNode }) => (
-  <div className="rounded-xl border border-dashed border-white/[0.05] px-3 py-4 text-center text-[12.5px] text-grey-500">
+  <div className="rounded-xl border border-dashed border-white/[0.08] px-3 py-4 text-center text-[12.5px] text-grey-500">
     {children}
   </div>
 );

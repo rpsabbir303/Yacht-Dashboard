@@ -5,27 +5,25 @@
  * `adminMockBaseQuery` with `fetchBaseQuery({ baseUrl })` to wire up a real
  * backend; every endpoint signature stays the same.
  *
- * Scoped to the *practical* yacht-hiring admin surface — crew, owners, jobs,
- * applications, analytics, announcements and security. Anything that used
- * to power reports / fraud / disputes / moderation has been removed.
+ * Scoped to the practical yacht-hiring admin surface — crew, owners, jobs,
+ * applications, analytics and announcements.
  */
 import { createApi, type BaseQueryFn } from "@reduxjs/toolkit/query/react";
 
 import {
-  mockActiveSessions,
   mockAnalytics,
   mockAnnouncements,
   mockApplications,
-  mockAuditTrail,
   mockCrewProfiles,
   mockOwnerProfiles,
-  mockSecurityEvents,
 } from "./adminMockData";
+import {
+  computeSupportSummary,
+  mockSupportTickets,
+} from "./supportMockData";
 import { mockJobs, mockUser } from "./mockData";
 import type {
-  ActiveSession,
   AdminAccountStatus,
-  AdminAuditEntry,
   AnalyticsSnapshot,
   Announcement,
   AnnouncementAudience,
@@ -39,7 +37,14 @@ import type {
   OwnerProfile,
   SearchResponse,
   SearchResult,
-  SecurityEvent,
+  SupportTicket,
+  SupportTicketCategory,
+  SupportTicketListParams,
+  SupportTicketListResponse,
+  SupportTicketPriority,
+  SupportTicketStatus,
+  SupportTicketSummary,
+  SupportUserRole,
   VerificationStatus,
 } from "@/types";
 
@@ -53,27 +58,37 @@ let crewDb: CrewProfile[] = [...mockCrewProfiles];
 let ownersDb: OwnerProfile[] = [...mockOwnerProfiles];
 let applicationsDb: ApplicationSummary[] = [...mockApplications];
 let announcementsDb: Announcement[] = [...mockAnnouncements];
-let sessionsDb: ActiveSession[] = [...mockActiveSessions];
-let auditDb: AdminAuditEntry[] = [...mockAuditTrail];
+let supportDb: SupportTicket[] = [...mockSupportTickets];
 
-const recordAudit = (
-  action: string,
-  target?: { type: string; id: string; label: string },
-) => {
-  auditDb = [
-    {
-      id: `au_${Date.now()}`,
-      admin: {
-        id: mockUser.id,
-        name: mockUser.fullName,
-        role: mockUser.adminRole ?? "super-admin",
-      },
-      action,
-      target,
-      createdAt: new Date().toISOString(),
-    },
-    ...auditDb,
-  ];
+const toSupportSummary = (t: SupportTicket): SupportTicketSummary => {
+  const { messages: _m, attachments: _a, ...summary } = t;
+  return summary;
+};
+
+const filterSupportTickets = (
+  tickets: SupportTicket[],
+  p: SupportTicketListParams,
+): SupportTicketSummary[] => {
+  const q = (p.search ?? "").toLowerCase();
+  return tickets
+    .filter((t) => {
+      if (p.status && p.status !== "all" && t.status !== p.status) return false;
+      if (p.userRole && p.userRole !== "all" && t.userRole !== p.userRole)
+        return false;
+      if (p.priority && p.priority !== "all" && t.priority !== p.priority)
+        return false;
+      if (p.category && p.category !== "all" && t.category !== p.category)
+        return false;
+      if (!q) return true;
+      return (
+        t.ticketNumber.toLowerCase().includes(q) ||
+        t.userName.toLowerCase().includes(q) ||
+        t.email.toLowerCase().includes(q) ||
+        t.subject.toLowerCase().includes(q)
+      );
+    })
+    .map(toSupportSummary)
+    .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt));
 };
 
 const computeJobStats = (jobId: string): JobApplicationStats => {
@@ -170,18 +185,23 @@ type AdminRequest =
       };
     }
   | { url: "/admin/announcements/delete"; method: "DELETE"; body: { id: string } }
-  /* ---- analytics + security ---- */
+  /* ---- analytics ---- */
   | { url: "/admin/analytics" }
-  | { url: "/admin/security/events" }
-  | { url: "/admin/security/audit" }
-  | { url: "/admin/security/sessions" }
-  | {
-      url: "/admin/security/sessions/revoke";
-      method: "DELETE";
-      body: { id: string };
-    }
   /* ---- global search ---- */
-  | { url: "/admin/search"; params: { q: string } };
+  | { url: "/admin/search"; params: { q: string } }
+  /* ---- support (maps to GET/PATCH/POST /support/tickets* in production) ---- */
+  | { url: "/support/tickets"; params?: SupportTicketListParams }
+  | { url: "/support/tickets/detail"; params: { id: string } }
+  | {
+      url: "/support/tickets/status";
+      method: "PATCH";
+      body: { id: string; status: SupportTicketStatus };
+    }
+  | {
+      url: "/support/tickets/reply";
+      method: "POST";
+      body: { id: string; message: string };
+    };
 
 const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }> = async (
   arg,
@@ -249,11 +269,6 @@ const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }
               }
             : c,
         );
-        recordAudit(`Crew verification → ${arg.body.decision}`, {
-          type: "crew",
-          id: arg.body.id,
-          label: crewDb.find((c) => c.id === arg.body.id)?.fullName ?? arg.body.id,
-        });
         return { data: crewDb.find((c) => c.id === arg.body.id)! };
       }
 
@@ -262,11 +277,6 @@ const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }
         crewDb = crewDb.map((c) =>
           c.id === arg.body.id ? { ...c, status: arg.body.status } : c,
         );
-        recordAudit(`Crew status → ${arg.body.status}`, {
-          type: "crew",
-          id: arg.body.id,
-          label: crewDb.find((c) => c.id === arg.body.id)?.fullName ?? arg.body.id,
-        });
         return { data: crewDb.find((c) => c.id === arg.body.id)! };
       }
 
@@ -316,11 +326,6 @@ const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }
               }
             : o,
         );
-        recordAudit(`Owner verification → ${arg.body.decision}`, {
-          type: "owner",
-          id: arg.body.id,
-          label: ownersDb.find((o) => o.id === arg.body.id)?.fullName ?? arg.body.id,
-        });
         return { data: ownersDb.find((o) => o.id === arg.body.id)! };
       }
 
@@ -329,11 +334,6 @@ const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }
         ownersDb = ownersDb.map((o) =>
           o.id === arg.body.id ? { ...o, status: arg.body.status } : o,
         );
-        recordAudit(`Owner status → ${arg.body.status}`, {
-          type: "owner",
-          id: arg.body.id,
-          label: ownersDb.find((o) => o.id === arg.body.id)?.fullName ?? arg.body.id,
-        });
         return { data: ownersDb.find((o) => o.id === arg.body.id)! };
       }
 
@@ -418,13 +418,6 @@ const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }
               }
             : a,
         );
-        recordAudit(`Application status → ${arg.body.status}`, {
-          type: "application",
-          id: arg.body.id,
-          label:
-            applicationsDb.find((a) => a.id === arg.body.id)?.candidate.fullName ??
-            arg.body.id,
-        });
         return { data: applicationsDb.find((a) => a.id === arg.body.id)! };
       }
 
@@ -450,11 +443,6 @@ const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }
             openRate: arg.body.scheduledFor ? undefined : 0.54,
           };
           announcementsDb = [item, ...announcementsDb];
-          recordAudit(`Sent announcement: ${item.title}`, {
-            type: "announcement",
-            id: item.id,
-            label: item.title,
-          });
           return { data: item };
         }
         return { data: announcementsDb };
@@ -467,31 +455,11 @@ const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }
       }
 
       /* ====================================================
-         ANALYTICS + SECURITY
+         ANALYTICS
       ==================================================== */
 
       case "/admin/analytics":
         return { data: mockAnalytics };
-
-      case "/admin/security/events":
-        return { data: mockSecurityEvents };
-
-      case "/admin/security/audit":
-        return { data: auditDb };
-
-      case "/admin/security/sessions":
-        return { data: sessionsDb };
-
-      case "/admin/security/sessions/revoke": {
-        if (arg.method !== "DELETE") break;
-        sessionsDb = sessionsDb.filter((s) => s.id !== arg.body.id);
-        recordAudit("Revoked active session", {
-          type: "session",
-          id: arg.body.id,
-          label: arg.body.id,
-        });
-        return { data: { id: arg.body.id } };
-      }
 
       /* ====================================================
          GLOBAL SEARCH
@@ -573,6 +541,66 @@ const adminMockBaseQuery: BaseQueryFn<AdminRequest, unknown, { message: string }
         return { data: { results: results.slice(0, 20) } as SearchResponse };
       }
 
+      /* ====================================================
+         SUPPORT  →  GET /support/tickets
+      ==================================================== */
+
+      case "/support/tickets": {
+        const p = (arg.params ?? {}) as SupportTicketListParams;
+        const tickets = filterSupportTickets(supportDb, p);
+        const response: SupportTicketListResponse = {
+          tickets,
+          summary: computeSupportSummary(supportDb),
+        };
+        return { data: response };
+      }
+
+      case "/support/tickets/detail": {
+        const ticket = supportDb.find((t) => t.id === arg.params.id);
+        if (!ticket) {
+          return { error: { message: "Ticket not found" } };
+        }
+        return { data: ticket };
+      }
+
+      case "/support/tickets/status": {
+        const idx = supportDb.findIndex((t) => t.id === arg.body.id);
+        if (idx < 0) return { error: { message: "Ticket not found" } };
+        const updated: SupportTicket = {
+          ...supportDb[idx],
+          status: arg.body.status,
+          updatedAt: new Date().toISOString(),
+        };
+        supportDb[idx] = updated;
+        return { data: updated };
+      }
+
+      case "/support/tickets/reply": {
+        const idx = supportDb.findIndex((t) => t.id === arg.body.id);
+        if (idx < 0) return { error: { message: "Ticket not found" } };
+        const adminName = mockUser.fullName ?? "Support Team";
+        const reply = {
+          id: `msg_${Date.now()}`,
+          authorType: "admin" as const,
+          authorName: adminName,
+          body: arg.body.message,
+          createdAt: new Date().toISOString(),
+        };
+        const updated: SupportTicket = {
+          ...supportDb[idx],
+          messages: [...supportDb[idx].messages, reply],
+          updatedAt: reply.createdAt,
+          status:
+            supportDb[idx].status === "closed"
+              ? "closed"
+              : supportDb[idx].status === "resolved"
+                ? "resolved"
+                : "pending",
+        };
+        supportDb[idx] = updated;
+        return { data: updated };
+      }
+
       default:
         return {
           error: { message: `Unhandled admin route: ${(arg as { url: string }).url}` },
@@ -616,10 +644,9 @@ export const adminApi = createApi({
     "Application",
     "Announcements",
     "Analytics",
-    "Security",
-    "Audit",
-    "Sessions",
     "Search",
+    "Support",
+    "SupportTicket",
   ] as const,
   endpoints: (b) => ({
     /* --- CREW --- */
@@ -653,7 +680,6 @@ export const adminApi = createApi({
       invalidatesTags: (_r, _e, body) => [
         "Crew",
         { type: "CrewProfile", id: body.id },
-        "Audit",
       ],
     }),
     updateCrewStatus: b.mutation<
@@ -668,7 +694,6 @@ export const adminApi = createApi({
       invalidatesTags: (_r, _e, body) => [
         "Crew",
         { type: "CrewProfile", id: body.id },
-        "Audit",
       ],
     }),
 
@@ -703,7 +728,6 @@ export const adminApi = createApi({
       invalidatesTags: (_r, _e, body) => [
         "Owners",
         { type: "OwnerProfile", id: body.id },
-        "Audit",
       ],
     }),
     updateOwnerStatus: b.mutation<
@@ -718,7 +742,6 @@ export const adminApi = createApi({
       invalidatesTags: (_r, _e, body) => [
         "Owners",
         { type: "OwnerProfile", id: body.id },
-        "Audit",
       ],
     }),
 
@@ -769,7 +792,6 @@ export const adminApi = createApi({
       invalidatesTags: (_r, _e, body) => [
         "Applications",
         { type: "Application", id: body.id },
-        "Audit",
       ],
     }),
 
@@ -793,7 +815,7 @@ export const adminApi = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Announcements", "Audit"],
+      invalidatesTags: ["Announcements"],
     }),
     deleteAnnouncement: b.mutation<{ id: string }, string>({
       query: (id) => ({
@@ -810,32 +832,51 @@ export const adminApi = createApi({
       providesTags: ["Analytics"],
     }),
 
-    /* --- SECURITY --- */
-    listSecurityEvents: b.query<SecurityEvent[], void>({
-      query: () => ({ url: "/admin/security/events" }),
-      providesTags: ["Security"],
-    }),
-    listAuditTrail: b.query<AdminAuditEntry[], void>({
-      query: () => ({ url: "/admin/security/audit" }),
-      providesTags: ["Audit"],
-    }),
-    listActiveSessions: b.query<ActiveSession[], void>({
-      query: () => ({ url: "/admin/security/sessions" }),
-      providesTags: ["Sessions"],
-    }),
-    revokeSession: b.mutation<{ id: string }, string>({
-      query: (id) => ({
-        url: "/admin/security/sessions/revoke",
-        method: "DELETE",
-        body: { id },
-      }),
-      invalidatesTags: ["Sessions", "Audit"],
-    }),
-
     /* --- GLOBAL SEARCH --- */
     globalSearch: b.query<SearchResponse, string>({
       query: (q) => ({ url: "/admin/search", params: { q } }),
       providesTags: ["Search"],
+    }),
+
+    /* --- SUPPORT  (production: /support/tickets, /support/tickets/:id, …) --- */
+    listSupportTickets: b.query<SupportTicketListResponse, SupportTicketListParams | void>({
+      query: (params) => ({
+        url: "/support/tickets",
+        params: params ?? undefined,
+      }),
+      providesTags: ["Support"],
+    }),
+    getSupportTicket: b.query<SupportTicket, string>({
+      query: (id) => ({ url: "/support/tickets/detail", params: { id } }),
+      providesTags: (_r, _e, id) => [{ type: "SupportTicket", id }],
+    }),
+    updateSupportTicketStatus: b.mutation<
+      SupportTicket,
+      { id: string; status: SupportTicketStatus }
+    >({
+      query: (body) => ({
+        url: "/support/tickets/status",
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: (_r, _e, body) => [
+        "Support",
+        { type: "SupportTicket", id: body.id },
+      ],
+    }),
+    replySupportTicket: b.mutation<
+      SupportTicket,
+      { id: string; message: string }
+    >({
+      query: (body) => ({
+        url: "/support/tickets/reply",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (_r, _e, body) => [
+        "Support",
+        { type: "SupportTicket", id: body.id },
+      ],
     }),
   }),
 });
@@ -858,10 +899,10 @@ export const {
   useSendAnnouncementMutation,
   useDeleteAnnouncementMutation,
   useGetAnalyticsQuery,
-  useListSecurityEventsQuery,
-  useListAuditTrailQuery,
-  useListActiveSessionsQuery,
-  useRevokeSessionMutation,
   useGlobalSearchQuery,
   useLazyGlobalSearchQuery,
+  useListSupportTicketsQuery,
+  useGetSupportTicketQuery,
+  useUpdateSupportTicketStatusMutation,
+  useReplySupportTicketMutation,
 } = adminApi;

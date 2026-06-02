@@ -1,15 +1,27 @@
 /** @type {import('tailwindcss').Config} */
 
 /* ---------------------------------------------------------------
-   Minimal luxury palette — Linear x Stripe x Yacht
+   Meridian admin palette — cool-dark, single teal accent
+
+   Strict tokens (do not introduce ad-hoc shades in components):
+     bg            #050B14   page background
+     card          #0F1724   card / panel background
+     surface high  #151E2D   raised surface / secondary card
+     accent        #22C7B8   single accent
+     text primary  #FFFFFF
+     text secondary#94A3B8   (grey-400)
+     text muted    #6B7280   (grey-500) — labels, metadata, timestamps
+     border        rgba(255,255,255,0.08)
+     border hover  rgba(34,199,184,0.35)
+     hover overlay rgba(255,255,255,0.05)
 ---------------------------------------------------------------- */
-const ink = "#0D0F12"; // Page background
-const surface = "#171A1F"; // Card background
-const slate = "#2A2E34"; // Borders, hovers, dividers
-const teal = "#14B8A6"; // Single accent
-const grey = "#A1A1AA"; // Secondary text
-const gold = "#C6A75E"; // Reserved for premium / verification
-const danger = "#AA2727"; // Rejections / destructive
+const ink = "#050B14";
+const surface = "#0F1724";
+const slate = "#151E2D";
+const teal = "#22C7B8";
+const grey = "#94A3B8";
+const gold = "#D4B25F";
+const danger = "#AA2727";
 
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
@@ -33,36 +45,40 @@ export default {
         },
         surface: {
           DEFAULT: surface,
-          soft: "#13161A",
+          soft: "#0B1320",
           card: surface,
-          high: "#1F2329",
+          high: "#1A2335",
         },
         line: {
-          DEFAULT: "rgba(255,255,255,0.05)",
-          strong: "rgba(255,255,255,0.08)",
+          DEFAULT: "rgba(255,255,255,0.08)",
+          subtle: "rgba(255,255,255,0.05)",
+          strong: "rgba(255,255,255,0.12)",
+          hover: "rgba(34,199,184,0.35)",
           slate: slate,
         },
         teal: {
-          50: "#ecfdf7",
-          100: "#cffaf0",
-          200: "#9ff3df",
-          300: "#5fe5c8",
-          400: "#2dd2b0",
+          50: "#ecfdf9",
+          100: "#cff8ec",
+          200: "#9ff0d8",
+          300: "#5fe3c6",
+          400: "#3dd5b6",
           500: teal,
-          600: "#0d9488",
-          700: "#0f766e",
-          800: "#115e59",
-          900: "#134e4a",
+          600: "#179a92",
+          700: "#12807a",
+          800: "#0f6864",
+          900: "#0e4f4d",
         },
         grey: {
           DEFAULT: grey,
-          400: "#A1A1AA",
-          500: "#71717A",
-          600: "#52525B",
+          300: "#CBD5E1",
+          400: "#94A3B8", // Secondary text (cool slate)
+          500: "#64748B", // Muted text — labels, timestamps, metadata
+          600: "#475569", // Very muted — disabled, decorative icons
         },
         gold: {
+          300: "#E5C77F",
           400: "#D9BE7A",
-          500: gold,
+          500: gold, // #D4B25F — warning indicators / premium accent
           600: "#9D8246",
         },
         danger: {
@@ -88,16 +104,16 @@ export default {
           950: "#08090b",
         },
         ocean: {
-          50: "#ecfdf7",
-          100: "#cffaf0",
-          200: "#9ff3df",
-          300: "#5fe5c8",
-          400: "#2dd2b0",
+          50: "#ecfdf9",
+          100: "#cff8ec",
+          200: "#9ff0d8",
+          300: "#5fe3c6",
+          400: "#3dd5b6",
           500: teal,
-          600: "#0d9488",
-          700: "#0f766e",
-          800: "#115e59",
-          900: "#134e4a",
+          600: "#179a92",
+          700: "#12807a",
+          800: "#0f6864",
+          900: "#0e4f4d",
         },
       },
       fontFamily: {
@@ -136,7 +152,7 @@ export default {
         card: "0 1px 0 0 rgba(255,255,255,0.03) inset, 0 10px 30px -18px rgba(0,0,0,0.6)",
         elevated:
           "0 1px 0 0 rgba(255,255,255,0.04) inset, 0 24px 60px -28px rgba(0,0,0,0.8)",
-        glow: "0 8px 24px -10px rgba(20,184,166,0.45)",
+        glow: "0 8px 24px -10px rgba(34,199,184,0.45)",
         glass:
           "0 1px 0 0 rgba(255,255,255,0.03) inset, 0 10px 30px -18px rgba(0,0,0,0.6)",
       },

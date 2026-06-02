@@ -45,12 +45,12 @@ export const AuthLayout = () => {
             className="max-w-md space-y-4"
           >
             <div className="eyebrow">Platform operations</div>
-            <h2 className="text-[42px] font-semibold leading-[1.05] tracking-tighter2 text-white">
+            <h2 className="text-[42px] font-bold leading-[1.05] tracking-tighter2 text-white">
               The admin console for the Meridian yacht hiring platform.
             </h2>
             <p className="text-[14.5px] leading-relaxed text-grey-400">
-              Verifications, moderation, disputes and platform health — managed
-              from a single quiet workspace built for moderators and admins.
+              Crew, owners, jobs and applications — managed from a single quiet
+              workspace built for moderators and admins.
             </p>
           </motion.div>
 

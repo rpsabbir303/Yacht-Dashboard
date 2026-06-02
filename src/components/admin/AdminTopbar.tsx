@@ -42,11 +42,11 @@ export const AdminTopbar = () => {
   );
 
   return (
-    <header className="sticky top-0 z-30 border-b border-white/[0.05] bg-ink/85 backdrop-blur-xl">
+    <header className="sticky top-0 z-30 border-b border-white/[0.08] bg-ink/85 backdrop-blur-xl">
       <div className="flex items-center gap-3 px-4 py-3.5 sm:px-8">
         <button
           onClick={() => dispatch(setMobileSidebarOpen(true))}
-          className="grid h-10 w-10 place-items-center rounded-xl text-grey-400 transition hover:bg-white/[0.04] hover:text-white lg:hidden"
+          className="icon-btn h-10 w-10 lg:hidden"
           aria-label="Open menu"
         >
           <MenuOutlined />
@@ -56,14 +56,14 @@ export const AdminTopbar = () => {
         <button
           type="button"
           onClick={() => dispatch(setCommandPaletteOpen(true))}
-          className="group ml-auto flex h-10 w-full max-w-xl flex-1 items-center gap-2 rounded-xl border border-white/[0.05] bg-white/[0.015] px-3.5 text-left text-grey-500 transition hover:border-white/[0.1] hover:bg-white/[0.025] hover:text-grey-400 sm:ml-0"
+          className="group ml-auto flex h-10 w-full max-w-xl flex-1 items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 text-left text-grey-500 transition hover:border-teal-500/35 hover:bg-white/[0.05] hover:text-grey-400 sm:ml-0"
           aria-label="Open admin search"
         >
           <SearchOutlined />
           <span className="flex-1 truncate text-[13px]">
-            Search users, jobs, reports, disputes…
+            Search crew, owners, jobs, applications…
           </span>
-          <kbd className="hidden rounded-md border border-white/[0.06] bg-white/[0.03] px-1.5 py-0.5 text-[10px] font-medium text-grey-500 group-hover:text-grey-400 sm:inline-flex">
+          <kbd className="hidden rounded-md border border-white/[0.08] bg-white/[0.03] px-1.5 py-0.5 text-[10px] font-medium text-grey-500 group-hover:text-grey-400 sm:inline-flex">
             ⌘ K
           </kbd>
         </button>

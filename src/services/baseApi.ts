@@ -15,6 +15,10 @@ import { createApi, type BaseQueryFn } from "@reduxjs/toolkit/query/react";
 
 import { ACCESS_TOKEN_KEY } from "@utils/constants";
 import { mockJobs, mockNotifications, mockUser } from "./mockData";
+import {
+  seedLegalDocuments,
+  seedLegalDocumentVersions,
+} from "./legalMockData";
 import type {
   ForgotPasswordRequest,
   ForgotPasswordResponse,
@@ -26,9 +30,16 @@ import type {
 import type {
   AppNotification,
   AuthSession,
+  CreateLegalDocumentRequest,
   Job,
+  LegalDocument,
+  LegalDocumentId,
+  LegalDocumentVersion,
   LoginPayload,
   PaginatedResponse,
+  PublishLegalDocumentRequest,
+  RestoreLegalDocumentVersionRequest,
+  UpdateLegalDocumentRequest,
   User,
 } from "@/types";
 
@@ -51,6 +62,38 @@ const paginate = <T,>(
 /* ---------------- mutable in-memory stores ---------------- */
 const jobsDb: Job[] = [...mockJobs];
 let notificationsDb: AppNotification[] = [...mockNotifications];
+
+let legalDocsDb: LegalDocument[] = seedLegalDocuments.map((d) => ({ ...d }));
+let legalVersionsDb: LegalDocumentVersion[] = seedLegalDocumentVersions.map(
+  (v) => ({ ...v }),
+);
+
+/** Identity of the admin "performing" each mock mutation. */
+const CURRENT_ADMIN_NAME = "Super Admin";
+
+/** Bump "1.1" → "1.2"; "1.9" → "2.0"; bare "1" → "1.1". */
+const bumpVersion = (current: string): string => {
+  const [major, minor = "0"] = current.split(".");
+  const next = Number(minor) + 1;
+  if (Number.isNaN(next)) return `${current}.1`;
+  if (next >= 10) return `${Number(major) + 1}.0`;
+  return `${major}.${next}`;
+};
+
+const stampVersion = (
+  doc: LegalDocument,
+  reason: "saved" | "published" | "restored",
+  note?: string,
+): LegalDocumentVersion => ({
+  id: `${doc.id}-v${doc.version}-${Date.now()}`,
+  documentId: doc.id,
+  version: doc.version,
+  content: doc.content,
+  status: doc.status,
+  createdAt: doc.updatedAt,
+  createdBy: doc.updatedBy,
+  note: note ?? (reason === "restored" ? "Restored from earlier version" : undefined),
+});
 
 /* ---------------- mock OTP / reset token store ----------------
  * In a real backend the OTP would be sent over email/SMS and stored
@@ -84,7 +127,34 @@ type MockRequest =
   | { url: "/auth/reset-password"; method: "POST"; body: ResetPasswordRequest }
   | { url: "/jobs"; params?: { search?: string; status?: string; page?: number } }
   | { url: "/notifications" }
-  | { url: "/notifications/read"; method: "PATCH"; body: { id?: string } };
+  | { url: "/notifications/read"; method: "PATCH"; body: { id?: string } }
+  /* ---- legal documents ---- */
+  | { url: "/legal-documents" }
+  | { url: "/legal-documents/byId"; params: { id: LegalDocumentId } }
+  | {
+      url: "/legal-documents";
+      method: "POST";
+      body: CreateLegalDocumentRequest;
+    }
+  | {
+      url: "/legal-documents/update";
+      method: "PUT";
+      body: UpdateLegalDocumentRequest;
+    }
+  | {
+      url: "/legal-documents/publish";
+      method: "POST";
+      body: PublishLegalDocumentRequest;
+    }
+  | {
+      url: "/legal-documents/versions";
+      params: { id: LegalDocumentId };
+    }
+  | {
+      url: "/legal-documents/restore-version";
+      method: "POST";
+      body: RestoreLegalDocumentVersionRequest;
+    };
 
 const mockBaseQuery: BaseQueryFn<MockRequest, unknown, { message: string }> = async (
   arg,
@@ -219,6 +289,124 @@ const mockBaseQuery: BaseQueryFn<MockRequest, unknown, { message: string }> = as
         return { data: notificationsDb };
       }
 
+      /* ----------------- legal documents ----------------- */
+
+      case "/legal-documents": {
+        if (!("method" in arg)) {
+          return { data: [...legalDocsDb] };
+        }
+        if (arg.method !== "POST") break;
+        const now = new Date().toISOString();
+        const id = `${arg.body.userRole}-${arg.body.documentType}` as LegalDocumentId;
+        const exists = legalDocsDb.find((d) => d.id === id);
+        if (exists) {
+          return {
+            error: {
+              message: `A ${arg.body.documentType} document already exists for ${arg.body.userRole} users.`,
+            },
+          };
+        }
+        const created: LegalDocument = {
+          id,
+          documentType: arg.body.documentType,
+          userRole: arg.body.userRole,
+          title: arg.body.title,
+          content: arg.body.content,
+          status: "draft",
+          version: "1.0",
+          createdAt: now,
+          updatedAt: now,
+          updatedBy: CURRENT_ADMIN_NAME,
+        };
+        legalDocsDb = [...legalDocsDb, created];
+        return { data: created };
+      }
+
+      case "/legal-documents/byId": {
+        const doc = legalDocsDb.find((d) => d.id === arg.params.id);
+        if (!doc) return { error: { message: "Document not found." } };
+        return { data: { ...doc } };
+      }
+
+      case "/legal-documents/update": {
+        if (arg.method !== "PUT") break;
+        const existing = legalDocsDb.find((d) => d.id === arg.body.id);
+        if (!existing) return { error: { message: "Document not found." } };
+        const now = new Date().toISOString();
+        const updated: LegalDocument = {
+          ...existing,
+          title: arg.body.title ?? existing.title,
+          content: arg.body.content ?? existing.content,
+          status: "draft",
+          updatedAt: now,
+          updatedBy: CURRENT_ADMIN_NAME,
+        };
+        legalDocsDb = legalDocsDb.map((d) =>
+          d.id === updated.id ? updated : d,
+        );
+        return { data: updated };
+      }
+
+      case "/legal-documents/publish": {
+        if (arg.method !== "POST") break;
+        const existing = legalDocsDb.find((d) => d.id === arg.body.id);
+        if (!existing) return { error: { message: "Document not found." } };
+        const now = new Date().toISOString();
+        const nextVersion = arg.body.version ?? bumpVersion(existing.version);
+        const published: LegalDocument = {
+          ...existing,
+          status: "published",
+          version: nextVersion,
+          updatedAt: now,
+          updatedBy: CURRENT_ADMIN_NAME,
+          publishedAt: now,
+        };
+        legalDocsDb = legalDocsDb.map((d) =>
+          d.id === published.id ? published : d,
+        );
+        legalVersionsDb = [
+          stampVersion(published, "published", arg.body.note),
+          ...legalVersionsDb,
+        ];
+        return { data: published };
+      }
+
+      case "/legal-documents/versions": {
+        const versions = legalVersionsDb
+          .filter((v) => v.documentId === arg.params.id)
+          .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+        return { data: versions };
+      }
+
+      case "/legal-documents/restore-version": {
+        if (arg.method !== "POST") break;
+        const existing = legalDocsDb.find(
+          (d) => d.id === arg.body.documentId,
+        );
+        const snapshot = legalVersionsDb.find(
+          (v) => v.id === arg.body.versionId,
+        );
+        if (!existing) return { error: { message: "Document not found." } };
+        if (!snapshot)
+          return { error: { message: "Version snapshot not found." } };
+        const now = new Date().toISOString();
+        const restored: LegalDocument = {
+          ...existing,
+          content: snapshot.content,
+          status: "draft",
+          updatedAt: now,
+          updatedBy: CURRENT_ADMIN_NAME,
+        };
+        legalDocsDb = legalDocsDb.map((d) =>
+          d.id === restored.id ? restored : d,
+        );
+        legalVersionsDb = [
+          stampVersion(restored, "restored", `Restored from v${snapshot.version}`),
+          ...legalVersionsDb,
+        ];
+        return { data: restored };
+      }
+
       default:
         return {
           error: { message: `Unhandled mock route: ${(arg as { url: string }).url}` },
@@ -237,7 +425,13 @@ const mockBaseQuery: BaseQueryFn<MockRequest, unknown, { message: string }> = as
 export const baseApi = createApi({
   reducerPath: "api",
   baseQuery: mockBaseQuery,
-  tagTypes: ["Auth", "Jobs", "Notifications"] as const,
+  tagTypes: [
+    "Auth",
+    "Jobs",
+    "Notifications",
+    "LegalDocuments",
+    "LegalVersions",
+  ] as const,
   endpoints: (b) => ({
     me: b.query<User, void>({
       query: () => ({ url: "/auth/me" }),
@@ -273,6 +467,97 @@ export const baseApi = createApi({
       }),
       invalidatesTags: ["Notifications"],
     }),
+
+    /* ----------------- legal documents ----------------- */
+
+    /** GET /legal-documents — list all managed documents. */
+    listLegalDocuments: b.query<LegalDocument[], void>({
+      query: () => ({ url: "/legal-documents" }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map(
+                (d) => ({ type: "LegalDocuments", id: d.id } as const),
+              ),
+              { type: "LegalDocuments" as const, id: "LIST" },
+            ]
+          : [{ type: "LegalDocuments" as const, id: "LIST" }],
+    }),
+
+    /** GET /legal-documents/:id — fetch single document. */
+    getLegalDocument: b.query<LegalDocument, LegalDocumentId>({
+      query: (id) => ({ url: "/legal-documents/byId", params: { id } }),
+      providesTags: (_r, _e, id) => [{ type: "LegalDocuments", id }],
+    }),
+
+    /** POST /legal-documents — create a new legal document. */
+    createLegalDocument: b.mutation<LegalDocument, CreateLegalDocumentRequest>({
+      query: (body) => ({
+        url: "/legal-documents",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: [{ type: "LegalDocuments", id: "LIST" }],
+    }),
+
+    /** PUT /legal-documents/:id — update document (Save Draft / autosave). */
+    updateLegalDocument: b.mutation<LegalDocument, UpdateLegalDocumentRequest>({
+      query: (body) => ({
+        url: "/legal-documents/update",
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: "LegalDocuments", id },
+        { type: "LegalDocuments", id: "LIST" },
+      ],
+    }),
+
+    /** POST /legal-documents/publish — publish + version bump. */
+    publishLegalDocument: b.mutation<
+      LegalDocument,
+      PublishLegalDocumentRequest
+    >({
+      query: (body) => ({
+        url: "/legal-documents/publish",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (_r, _e, { id }) => [
+        { type: "LegalDocuments", id },
+        { type: "LegalDocuments", id: "LIST" },
+        { type: "LegalVersions", id },
+      ],
+    }),
+
+    /** GET /legal-documents/versions/:id — version history. */
+    listLegalDocumentVersions: b.query<
+      LegalDocumentVersion[],
+      LegalDocumentId
+    >({
+      query: (id) => ({
+        url: "/legal-documents/versions",
+        params: { id },
+      }),
+      providesTags: (_r, _e, id) => [{ type: "LegalVersions", id }],
+    }),
+
+    /** POST /legal-documents/restore-version — restore historical version. */
+    restoreLegalDocumentVersion: b.mutation<
+      LegalDocument,
+      RestoreLegalDocumentVersionRequest
+    >({
+      query: (body) => ({
+        url: "/legal-documents/restore-version",
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (_r, _e, { documentId }) => [
+        { type: "LegalDocuments", id: documentId },
+        { type: "LegalDocuments", id: "LIST" },
+        { type: "LegalVersions", id: documentId },
+      ],
+    }),
   }),
 });
 
@@ -282,4 +567,11 @@ export const {
   useListJobsQuery,
   useListNotificationsQuery,
   useMarkNotificationReadMutation,
+  useListLegalDocumentsQuery,
+  useGetLegalDocumentQuery,
+  useCreateLegalDocumentMutation,
+  useUpdateLegalDocumentMutation,
+  usePublishLegalDocumentMutation,
+  useListLegalDocumentVersionsQuery,
+  useRestoreLegalDocumentVersionMutation,
 } = baseApi;

@@ -40,7 +40,19 @@ const AdminNotificationsPage = lazy(
   () => import("@admin/notifications/NotificationsPage"),
 );
 const AnalyticsPage = lazy(() => import("@admin/analytics/AnalyticsPage"));
-const SecurityPage = lazy(() => import("@admin/security/SecurityPage"));
+const SupportCenterPage = lazy(
+  () => import("@admin/support/SupportCenterPage"),
+);
+const TicketDetailsPage = lazy(
+  () => import("@admin/support/TicketDetailsPage"),
+);
+const SettingsLayout = lazy(() => import("@admin/settings/SettingsLayout"));
+const ProfileSettingsPage = lazy(
+  () => import("@admin/settings/ProfileSettingsPage"),
+);
+const SecuritySettingsPage = lazy(
+  () => import("@admin/settings/SecuritySettingsPage"),
+);
 const PlatformSettingsPage = lazy(
   () => import("@admin/settings/PlatformSettingsPage"),
 );
@@ -153,6 +165,22 @@ export const AppRoutes = () => (
           }
         />
         <Route
+          path="/admin/support"
+          element={
+            <AdminRoute required="support.read">
+              <SupportCenterPage />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/support/:id"
+          element={
+            <AdminRoute required="support.read">
+              <TicketDetailsPage />
+            </AdminRoute>
+          }
+        />
+        <Route
           path="/admin/notifications"
           element={
             <AdminRoute required="announcements.send">
@@ -168,15 +196,15 @@ export const AppRoutes = () => (
             </AdminRoute>
           }
         />
-        <Route
-          path="/admin/security"
-          element={
-            <AdminRoute required="security.read">
-              <SecurityPage />
-            </AdminRoute>
-          }
-        />
-        <Route path="/admin/settings" element={<PlatformSettingsPage />} />
+        <Route path="/admin/settings" element={<SettingsLayout />}>
+          <Route
+            index
+            element={<Navigate to="/admin/settings/profile" replace />}
+          />
+          <Route path="profile" element={<ProfileSettingsPage />} />
+          <Route path="security" element={<SecuritySettingsPage />} />
+          <Route path="platform" element={<PlatformSettingsPage />} />
+        </Route>
       </Route>
 
       <Route path="*" element={<NotFoundPage />} />

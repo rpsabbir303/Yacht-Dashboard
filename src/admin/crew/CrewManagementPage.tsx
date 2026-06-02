@@ -276,7 +276,7 @@ export const CrewManagementPage = () => {
                     <Avatar
                       src={row.avatarUrl}
                       size={36}
-                      className="!bg-white/[0.04] !text-grey-400"
+                      className="!bg-white/[0.05] !text-grey-400"
                     >
                       {initials(row.fullName)}
                     </Avatar>
@@ -357,8 +357,8 @@ export const CrewManagementPage = () => {
                       percent={v}
                       size="small"
                       showInfo={false}
-                      strokeColor={v >= 80 ? "#14B8A6" : v >= 60 ? "#C6A75E" : "#71717A"}
-                      trailColor="rgba(255,255,255,0.06)"
+                      strokeColor={v >= 80 ? "#22C7B8" : v >= 60 ? "#D4B25F" : "#64748B"}
+                      trailColor="rgba(255,255,255,0.08)"
                       className="!m-0 !w-[60px]"
                     />
                     <span className="text-[11.5px] text-grey-400">{v}%</span>
@@ -385,7 +385,7 @@ export const CrewManagementPage = () => {
                     <Tooltip title="View profile">
                       <Link
                         to={`/admin/crew/${row.id}`}
-                        className="grid h-7 w-7 place-items-center rounded-lg text-grey-400 transition hover:bg-white/[0.04] hover:text-white"
+                        className="icon-btn icon-btn-sm h-7 w-7"
                         aria-label="View"
                       >
                         <EyeOutlined />
@@ -424,7 +424,7 @@ export const CrewManagementPage = () => {
                       placement="bottomRight"
                     >
                       <button
-                        className="grid h-7 w-7 place-items-center rounded-lg text-grey-400 transition hover:bg-white/[0.04] hover:text-white"
+                        className="icon-btn icon-btn-sm h-7 w-7"
                         aria-label="More actions"
                       >
                         <MoreOutlined />
@@ -461,7 +461,7 @@ const SummaryTile = ({
       </div>
       <div
         className={cn(
-          "mt-1 text-xl font-semibold tracking-tighter2",
+          "mt-1 text-xl font-bold tracking-tighter2",
           tone === "teal" && "text-teal-300",
           tone === "gold" && "text-gold-400",
           tone === "danger" && "text-[#C24545]",

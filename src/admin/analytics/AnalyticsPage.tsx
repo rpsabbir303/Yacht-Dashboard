@@ -23,17 +23,17 @@ import { useGetAnalyticsQuery, useListApplicationsQuery } from "@services/adminA
 
 import { AnalyticsWidget, KpiRow } from "./components/AnalyticsWidget";
 
-const TEAL = "#14B8A6";
-const GOLD = "#C6A75E";
-const GREY = "#71717A";
-const GRID = "rgba(255,255,255,0.04)";
-const AXIS = "#71717A";
+const TEAL = "#22C7B8";
+const GOLD = "#D4B25F";
+const GREY = "#6B7280";
+const GRID = "rgba(255,255,255,0.05)";
+const AXIS = "#6B7280";
 
 const tooltipStyle = {
-  backgroundColor: "#171A1F",
-  border: "1px solid rgba(255,255,255,0.06)",
+  backgroundColor: "#151E2D",
+  border: "1px solid rgba(255,255,255,0.08)",
   borderRadius: 12,
-  color: "#fff",
+  color: "#FFFFFF",
   fontSize: 12,
   padding: "8px 12px",
   boxShadow: "0 12px 32px -16px rgba(0,0,0,0.6)",
@@ -190,7 +190,7 @@ export const AnalyticsPage = () => {
                     <LabelList
                       dataKey="count"
                       position="right"
-                      fill="#A1A1AA"
+                      fill="#94A3B8"
                       fontSize={11}
                     />
                   </Bar>
@@ -214,11 +214,11 @@ export const AnalyticsPage = () => {
               { label: "Expired", value: data.jobs.expired, tone: "danger" },
             ]}
           />
-          <div className="mt-6 rounded-xl border border-white/[0.04] bg-white/[0.015] px-4 py-3">
+          <div className="mt-6 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3">
             <div className="text-[10px] uppercase tracking-[0.18em] text-grey-500">
               Average time to fill
             </div>
-            <div className="mt-1 text-2xl font-semibold tracking-tighter2 text-white">
+            <div className="mt-1 text-2xl font-bold tracking-tighter2 text-white">
               {data.jobs.avgTimeToFillDays.toFixed(1)}
               <span className="ml-1 text-sm text-grey-500">days</span>
             </div>
@@ -265,7 +265,7 @@ export const AnalyticsPage = () => {
                     {
                       name: "Interview",
                       count: appsByStatus.interviewing,
-                      fill: "#E5E7EB",
+                      fill: "#FFFFFF",
                     },
                     {
                       name: "Accepted",
@@ -299,7 +299,7 @@ export const AnalyticsPage = () => {
                     contentStyle={tooltipStyle}
                   />
                   <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                    {[GREY, GOLD, "#E5E7EB", TEAL, "#AA2727"].map((c, i) => (
+                    {[GREY, GOLD, "#FFFFFF", TEAL, "#AA2727"].map((c, i) => (
                       <Cell key={i} fill={c} />
                     ))}
                   </Bar>
@@ -329,7 +329,7 @@ export const AnalyticsPage = () => {
                   />
                   <Tooltip contentStyle={tooltipStyle} />
                   <Legend
-                    wrapperStyle={{ fontSize: 12, color: "#A1A1AA" }}
+                    wrapperStyle={{ fontSize: 12, color: "#94A3B8" }}
                     iconType="line"
                   />
                   <Line
@@ -371,7 +371,7 @@ const KpiCard = ({
       {label}
     </div>
     <div
-      className={`mt-1 text-2xl font-semibold tracking-tighter2 ${
+      className={`mt-1 text-2xl font-bold tracking-tighter2 ${
         tone === "teal"
           ? "text-teal-300"
           : tone === "gold"

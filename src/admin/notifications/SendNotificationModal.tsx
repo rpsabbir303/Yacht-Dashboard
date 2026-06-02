@@ -164,8 +164,8 @@ export const SendNotificationModal = ({ open, onClose }: Props) => {
                 className={cn(
                   "flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-[13px] transition",
                   audience === a.value
-                    ? "border-teal-500/30 bg-teal-500/[0.06] text-white"
-                    : "border-white/[0.05] bg-white/[0.015] text-grey-400 hover:border-white/[0.1] hover:text-white",
+                    ? "border-teal-500/35 bg-teal-500/[0.10] text-white"
+                    : "border-white/[0.08] bg-white/[0.03] text-grey-400 hover:border-teal-500/35 hover:text-white",
                 )}
               >
                 <span
@@ -196,8 +196,8 @@ export const SendNotificationModal = ({ open, onClose }: Props) => {
                   className={cn(
                     "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-[12.5px] transition",
                     active
-                      ? "border-teal-500/30 bg-teal-500/[0.06] text-teal-300"
-                      : "border-white/[0.05] bg-white/[0.015] text-grey-400 hover:border-white/[0.1] hover:text-white",
+                      ? "border-teal-500/35 bg-teal-500/[0.10] text-teal-300"
+                      : "border-white/[0.08] bg-white/[0.03] text-grey-400 hover:border-teal-500/35 hover:text-white",
                   )}
                 >
                   {c.icon}

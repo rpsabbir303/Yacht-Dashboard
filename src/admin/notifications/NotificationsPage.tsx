@@ -163,7 +163,7 @@ const Row = ({ a, onDelete }: { a: Announcement; onDelete: () => void }) => {
         <ClockCircleOutlined /> Scheduled
       </span>
     ) : (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.04] px-2 py-0.5 text-[11px] text-grey-400 ring-1 ring-white/[0.06]">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.05] px-2 py-0.5 text-[11px] text-grey-400 ring-1 ring-white/[0.08]">
         <EditOutlined /> Draft
       </span>
     );
@@ -179,12 +179,12 @@ const Row = ({ a, onDelete }: { a: Announcement; onDelete: () => void }) => {
           {a.body}
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-2 text-[11.5px] text-grey-500">
-          <span className="rounded-md bg-white/[0.04] px-1.5 py-0.5 text-grey-400">
+          <span className="rounded-md bg-white/[0.05] px-1.5 py-0.5 text-grey-400">
             {AUDIENCE_LABEL[a.audience]}
           </span>
           {a.channels.map((c) => (
             <Tooltip key={c} title={CHANNEL_LABEL[c]}>
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-white/[0.04] text-grey-400">
+              <span className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-white/[0.05] text-grey-400">
                 {CHANNEL_ICON[c]}
               </span>
             </Tooltip>

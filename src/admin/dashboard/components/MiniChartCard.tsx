@@ -12,15 +12,15 @@ import { GlassPanel } from "@components/common/GlassPanel";
 import { cn } from "@utils/cn";
 import type { AnalyticsSnapshot, ApplicationSummary } from "@/types";
 
-const TEAL = "#14B8A6";
-const GOLD = "#C6A75E";
+const TEAL = "#22C7B8";
+const GOLD = "#D4B25F";
 const DANGER = "#AA2727";
 
 const tooltipStyle = {
-  backgroundColor: "#171A1F",
-  border: "1px solid rgba(255,255,255,0.06)",
+  backgroundColor: "#151E2D",
+  border: "1px solid rgba(255,255,255,0.08)",
   borderRadius: 12,
-  color: "#fff",
+  color: "#FFFFFF",
   fontSize: 12,
   padding: "6px 10px",
 } as const;
@@ -50,7 +50,7 @@ const CardShell = ({
         {eyebrow}
       </div>
       <div className="mt-1 flex items-baseline gap-2">
-        <div className="text-2xl font-semibold tracking-tighter2 text-white">
+        <div className="text-2xl font-bold tracking-tighter2 text-white">
           {kpi}
         </div>
         {delta && (
@@ -59,7 +59,7 @@ const CardShell = ({
               "text-[11.5px]",
               tone === "teal" && "text-teal-300",
               tone === "gold" && "text-gold-400",
-              tone === "white" && "text-grey-400",
+              tone === "white" && "text-grey-500",
             )}
           >
             {delta}
@@ -147,7 +147,7 @@ export const DailyActivityMiniCard = ({ data }: DailyActivityProps) => {
           <Area
             type="monotone"
             dataKey="sessions"
-            stroke="#E5E7EB"
+            stroke="#FFFFFF"
             fill="url(#da-fill)"
             strokeWidth={2}
             dot={false}
@@ -184,9 +184,9 @@ export const ApplicationsPipelineMiniCard = ({
   );
 
   const data = [
-    { label: "Pending", count: byStatus.pending, fill: "#52525B" },
+    { label: "Pending", count: byStatus.pending, fill: "#4B5563" },
     { label: "Shortlist", count: byStatus.shortlisted, fill: GOLD },
-    { label: "Interview", count: byStatus.interviewing, fill: "#E5E7EB" },
+    { label: "Interview", count: byStatus.interviewing, fill: "#FFFFFF" },
     { label: "Accepted", count: byStatus.accepted, fill: TEAL },
     { label: "Rejected", count: byStatus.rejected, fill: DANGER },
   ];
