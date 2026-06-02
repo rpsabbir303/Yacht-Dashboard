@@ -1,7 +1,8 @@
 import { useEffect, type ReactNode } from "react";
+import { skipToken } from "@reduxjs/toolkit/query";
 
 import { useAppDispatch, useAppSelector } from "@redux/hooks";
-import { setSession } from "@redux/slices/authSlice";
+import { logout, setSession } from "@redux/slices/authSlice";
 import { useMeQuery } from "@services/baseApi";
 
 /**
@@ -18,9 +19,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const accessToken = useAppSelector((s) => s.auth.accessToken);
   const user = useAppSelector((s) => s.auth.user);
 
-  const { data: me } = useMeQuery(undefined, {
-    skip: !accessToken || !!user,
-  });
+  const shouldHydrateUser = !!accessToken && !user;
+  const { data: me } = useMeQuery(shouldHydrateUser ? undefined : skipToken);
+
+  useEffect(() => {
+    // Defensive: prevent redirect loops if a legacy stored user is missing adminRole.
+    if (accessToken && user && !user.adminRole) {
+      dispatch(logout());
+    }
+  }, [accessToken, user, dispatch]);
 
   useEffect(() => {
     if (me && accessToken && !user) {

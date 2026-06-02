@@ -133,7 +133,7 @@ const NavGroup = ({
           {label}
         </div>
       )}
-      <ul className="space-y-0.5">
+      <ul className="admin-sidebar-nav m-0 list-none space-y-0.5 p-0">
         {items.map((item) => (
           <li key={item.to}>
             <Tooltip

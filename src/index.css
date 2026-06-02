@@ -33,6 +33,15 @@ body {
    Reusable component classes
 ---------------------------------------------------------------------- */
 @layer components {
+  /* Sidebar navigation should never render list markers (bullets/dots). */
+  .admin-sidebar-nav,
+  .admin-sidebar-nav li {
+    list-style: none;
+  }
+  .admin-sidebar-nav ::marker {
+    content: "";
+  }
+
   /* ------------------------------------------------------------------
      Surfaces — single source of truth.
      • Border: rgba(255,255,255,0.08)

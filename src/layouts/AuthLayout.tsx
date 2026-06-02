@@ -19,7 +19,7 @@ export const AuthLayout = () => {
   const location = useLocation();
   const { status, user } = useAppSelector((s) => s.auth);
 
-  if (status === "authenticated" && user) {
+  if (status === "authenticated" && user?.adminRole) {
     return <Navigate to="/admin" replace state={{ from: location.pathname }} />;
   }
 
